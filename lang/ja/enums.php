@@ -91,6 +91,21 @@ return [
         'received' => '入荷完了',
         'cancelled' => 'キャンセル',
     ],
+    'order_status' => [
+        'pending' => '入金待ち',
+        'confirmed' => '確定',
+        'shipped' => '発送済み',
+        'completed' => '配達完了',
+        'cancelled' => 'キャンセル',
+    ],
+    'payment_method' => [
+        'bank_transfer' => '銀行振込',
+        'cash_on_delivery' => '代金引換',
+    ],
+    'payment_status' => [
+        'unpaid' => '未払い',
+        'paid' => '支払済み',
+    ],
     'stock_status' => [
         'in_stock' => '在庫あり',
         'low_stock' => '在庫僅少',

@@ -24,6 +24,14 @@ class TaxClass extends Model
     }
 
     /**
+     * @return HasMany<Product, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * @return HasMany<TaxRate, $this>
      */
     public function rates(): HasMany

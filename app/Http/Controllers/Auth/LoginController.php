@@ -6,6 +6,7 @@ use App\Actions\Auth\AttemptLogin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Catalog\WishlistService;
+use App\Services\Checkout\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,12 +19,13 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function store(LoginRequest $request, AttemptLogin $attemptLogin, WishlistService $wishlist): RedirectResponse
+    public function store(LoginRequest $request, AttemptLogin $attemptLogin, WishlistService $wishlist, CartService $cart): RedirectResponse
     {
         $user = $attemptLogin->handle($request->string('email'), $request->string('password'), (string) $request->ip());
 
         Auth::login($user, $request->boolean('remember'));
         $wishlist->mergeSessionInto($user);
+        $cart->mergeSessionInto($user);
         $request->session()->regenerate();
 
         $fallback = $user->isStaff() ? route('admin.dashboard') : route('account.dashboard');

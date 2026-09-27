@@ -39,7 +39,7 @@ class StorefrontTest extends TestCase
             ->assertOk()
             ->assertSee('Visible Lamb Cuts')
             ->assertDontSee('Hidden Draft Lamb')
-            ->assertDontSee(__('shop.nav.cart'));
+            ->assertSee(__('shop.nav.cart'));
 
         $this->get(route('products.show', $published->slug))->assertOk()->assertSee('Visible Lamb Cuts');
         $this->get(route('products.show', $draft->slug))->assertNotFound();
@@ -179,7 +179,7 @@ class StorefrontTest extends TestCase
         $this->get(route('brands.show', $brand))->assertNotFound();
     }
 
-    public function test_product_page_switches_variants_and_reports_low_stock_without_a_cart_button(): void
+    public function test_product_page_switches_variants_and_reports_low_stock(): void
     {
         $product = Product::factory()->priced(480)->create(['name' => 'Sized Tea']);
         $second = new ProductVariant([
@@ -197,7 +197,7 @@ class StorefrontTest extends TestCase
             ->assertSee('TEA-LARGE')
             ->assertSee(trans_choice('shop.product.low_stock', 2, ['count' => 2]))
             ->assertSee(__('shop.wishlist.add'))
-            ->assertDontSee(__('shop.nav.cart'));
+            ->assertSee(__('shop.cart.add'));
 
         $this->get(route('products.show', ['product' => $product->slug, 'variant' => $second->id]))
             ->assertOk()
@@ -254,6 +254,84 @@ class StorefrontTest extends TestCase
             ->assertSessionHas('success', __('shop.wishlist.removed'));
 
         $this->assertSame(0, $customer->wishlistItems()->count());
+    }
+
+    public function test_wishlist_toggle_can_stay_on_the_same_page(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->postJson(route('wishlist.store', $product->slug))
+            ->assertOk()
+            ->assertJsonPath('wished', true)
+            ->assertJsonPath('count', 1)
+            ->assertJsonPath('message', __('shop.wishlist.added'));
+
+        $this->deleteJson(route('wishlist.destroy', $product->slug))
+            ->assertOk()
+            ->assertJsonPath('wished', false)
+            ->assertJsonPath('count', 0)
+            ->assertJsonPath('message', __('shop.wishlist.removed'));
+    }
+
+    public function test_moving_a_wishlist_item_into_the_cart_removes_it_from_the_wishlist(): void
+    {
+        $product = Product::factory()->priced(900)->create(['name' => 'Saved Lamb']);
+        $other = Product::factory()->priced(500)->create();
+        $this->receive($product, 3);
+        $variant = $product->variants()->where('is_default', true)->first();
+        $customer = $this->customer();
+
+        $this->actingAs($customer)->post(route('wishlist.store', $product->slug));
+
+        $this->actingAs($customer)
+            ->get(route('account.wishlist'))
+            ->assertOk()
+            ->assertSee(__('shop.cart.quantity'))
+            ->assertSee(__('shop.cart.add'));
+
+        $this->actingAs($customer)
+            ->from(route('account.wishlist'))
+            ->post(route('wishlist.cart', $product->slug), ['variant_id' => $other->variants()->first()->id, 'quantity' => 1])
+            ->assertNotFound();
+
+        $this->assertSame(1, $customer->wishlistItems()->count());
+        $this->assertDatabaseCount('cart_items', 0);
+
+        $soldOut = Product::factory()->create(['name' => 'Unsold Lamb']);
+        $this->actingAs($customer)->post(route('wishlist.store', $soldOut->slug));
+        $this->actingAs($customer)
+            ->from(route('account.wishlist'))
+            ->post(route('wishlist.cart', $soldOut->slug), ['variant_id' => $soldOut->variants()->first()->id, 'quantity' => 1])
+            ->assertRedirect(route('account.wishlist'))
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('wishlist_items', ['user_id' => $customer->id, 'product_id' => $soldOut->id]);
+
+        $this->actingAs($customer)
+            ->from(route('account.wishlist'))
+            ->post(route('wishlist.cart', $product->slug), ['variant_id' => $variant->id, 'quantity' => 2])
+            ->assertRedirect(route('account.wishlist'))
+            ->assertSessionHas('success', __('shop.wishlist.moved'));
+
+        $this->assertDatabaseMissing('wishlist_items', ['user_id' => $customer->id, 'product_id' => $product->id]);
+        $this->assertDatabaseHas('cart_items', ['product_variant_id' => $variant->id, 'quantity' => 2]);
+        $this->actingAs($customer)->get(route('account.wishlist'))->assertOk()->assertDontSee('Saved Lamb');
+    }
+
+    public function test_adding_from_the_product_page_removes_the_saved_item(): void
+    {
+        $product = Product::factory()->priced(700)->create(['name' => 'Rice To Buy']);
+        $this->receive($product, 4);
+        $variant = $product->variants()->where('is_default', true)->first();
+        $customer = $this->customer();
+
+        $this->actingAs($customer)->post(route('wishlist.store', $product->slug));
+        $this->actingAs($customer)
+            ->post(route('cart.store'), ['variant_id' => $variant->id, 'quantity' => 1])
+            ->assertRedirect()
+            ->assertSessionHas('success', __('shop.wishlist.moved'));
+
+        $this->assertDatabaseMissing('wishlist_items', ['user_id' => $customer->id, 'product_id' => $product->id]);
+        $this->assertDatabaseHas('cart_items', ['product_variant_id' => $variant->id, 'quantity' => 1]);
     }
 
     public function test_recently_viewed_products_appear_on_the_home_page(): void

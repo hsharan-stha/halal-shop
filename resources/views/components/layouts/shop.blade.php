@@ -7,9 +7,44 @@
     {{ $head ?? '' }}
 </head>
 <body class="min-h-dvh">
+    @if (request()->routeIs('cart.*', 'account.wishlist'))
+        <script>
+            (() => {
+                const key = 'shop-scroll:' + location.pathname;
+                const flag = key + ':keep';
+                const navigation = performance.getEntriesByType('navigation')[0];
+                const restore = navigation && (navigation.type === 'reload' || navigation.type === 'back_forward' || sessionStorage.getItem(flag) === '1');
+                sessionStorage.removeItem(flag);
+
+                if (restore) {
+                    const y = Number(sessionStorage.getItem(key) || '0');
+                    const place = () => window.scrollTo(0, y);
+                    document.addEventListener('DOMContentLoaded', place);
+                    window.addEventListener('load', place);
+                    place();
+                }
+
+                window.addEventListener('pagehide', () => {
+                    sessionStorage.setItem(key, String(window.scrollY));
+                });
+
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+
+                    if (! (form instanceof HTMLFormElement) || form.hasAttribute('data-wishlist-toggle')) {
+                        return;
+                    }
+
+                    sessionStorage.setItem(key, String(window.scrollY));
+                    sessionStorage.setItem(flag, '1');
+                });
+            })();
+        </script>
+    @endif
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2">{{ __('shop.skip_to_content') }}</a>
 
     @php($bottomNav = \App\Support\Navigation::bottom())
+    @php($cartCount = Route::has('cart.index') ? app(\App\Services\Checkout\CartService::class)->count() : 0)
 
     <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
         <div class="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 lg:px-6">
@@ -43,11 +78,9 @@
 
                 @if (Route::has('account.wishlist') && feature('wishlist_enabled'))
                     @php($wishlistCount = count(app(\App\Services\Catalog\WishlistService::class)->ids()))
-                    <a href="{{ route('account.wishlist') }}" @class(['btn btn-ghost btn-icon relative', 'text-primary' => request()->routeIs('account.wishlist')]) aria-label="{{ $wishlistCount > 0 ? trans_choice('shop.wishlist.count', $wishlistCount, ['count' => $wishlistCount]) : __('shop.nav.wishlist') }}" @if (request()->routeIs('account.wishlist')) aria-current="page" @endif>
+                    <a href="{{ route('account.wishlist') }}" data-wishlist-nav @class(['btn btn-ghost btn-icon relative', 'text-primary' => request()->routeIs('account.wishlist')]) aria-label="{{ $wishlistCount > 0 ? trans_choice('shop.wishlist.count', $wishlistCount, ['count' => $wishlistCount]) : __('shop.nav.wishlist') }}" @if (request()->routeIs('account.wishlist')) aria-current="page" @endif>
                         <x-icon name="heart" :solid="$wishlistCount > 0" @class(['text-danger' => $wishlistCount > 0]) />
-                        @if ($wishlistCount > 0)
-                            <span data-wishlist-count="{{ $wishlistCount }}" class="absolute top-1 right-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-on-primary">{{ $wishlistCount > 99 ? '99+' : $wishlistCount }}</span>
-                        @endif
+                        <span data-wishlist-count="{{ $wishlistCount }}" @class(['absolute top-1 right-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-on-primary', 'hidden' => $wishlistCount < 1])>{{ $wishlistCount > 99 ? '99+' : $wishlistCount }}</span>
                     </a>
                 @endif
 
@@ -58,9 +91,11 @@
                 @endauth
 
                 @if (Route::has('cart.index'))
-                    <a href="{{ route('cart.index') }}" class="btn btn-ghost btn-icon relative" aria-label="{{ __('shop.nav.cart') }}">
+                    <a href="{{ route('cart.index') }}" @class(['btn btn-ghost btn-icon relative', 'text-primary' => request()->routeIs('cart.*')]) aria-label="{{ $cartCount > 0 ? trans_choice('shop.cart.count', $cartCount, ['count' => $cartCount]) : __('shop.nav.cart') }}" @if (request()->routeIs('cart.*')) aria-current="page" @endif>
                         <x-icon name="cart" />
-                        <livewire:cart-count />
+                        @if ($cartCount > 0)
+                            <span data-cart-count="{{ $cartCount }}" class="absolute top-1 right-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-on-primary">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
+                        @endif
                     </a>
                 @endif
             </nav>
@@ -86,8 +121,8 @@
                         <a href="{{ route($item['route']) }}" @class(['flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium', 'text-primary' => $active, 'text-ink-muted' => ! $active]) @if ($active) aria-current="page" @endif>
                             <span class="relative">
                                 <x-icon :name="$item['icon']" class="size-6" />
-                                @if ($item['route'] === 'cart.index')
-                                    <livewire:cart-count :compact="true" />
+                                @if ($item['route'] === 'cart.index' && $cartCount > 0)
+                                    <span data-cart-count="{{ $cartCount }}" class="absolute -top-1 -right-2 grid min-h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-on-primary">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
                                 @endif
                             </span>
                             {{ __($item['label']) }}

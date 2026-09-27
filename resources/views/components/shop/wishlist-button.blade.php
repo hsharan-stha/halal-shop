@@ -1,6 +1,6 @@
 @props(['product', 'wished' => false])
 
-<form method="POST" action="{{ route($wished ? 'wishlist.destroy' : 'wishlist.store', $product->slug) }}">
+<form method="POST" action="{{ route($wished ? 'wishlist.destroy' : 'wishlist.store', $product->slug) }}" data-wishlist-toggle data-product-slug="{{ $product->slug }}" data-store-url="{{ route('wishlist.store', $product->slug) }}" data-destroy-url="{{ route('wishlist.destroy', $product->slug) }}" data-add-label="{{ __('shop.wishlist.add') }}" data-remove-label="{{ __('shop.wishlist.remove') }}">
     @csrf
     @if ($wished)
         @method('DELETE')

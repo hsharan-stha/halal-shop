@@ -74,11 +74,13 @@
     html {
         -webkit-tap-highlight-color: transparent;
         text-size-adjust: 100%;
+        overflow-x: clip;
+        overflow-y: scroll;
+        scrollbar-gutter: stable;
     }
 
     body {
         @apply bg-page text-ink font-sans antialiased;
-        overflow-x: hidden;
     }
 
     :focus-visible {

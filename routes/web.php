@@ -59,12 +59,26 @@ Route::middleware('store')->group(function (): void {
     Route::get('/categories/{category:slug}', [Shop\CategoryController::class, 'show'])->name('categories.show');
     Route::get('/brands/{brand:slug}', [Shop\BrandController::class, 'show'])->name('brands.show');
 
+    Route::get('/cart', [Shop\CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart', [Shop\CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
+    Route::patch('/cart/{variant}', [Shop\CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
+    Route::delete('/cart/{variant}', [Shop\CartController::class, 'destroy'])->middleware('throttle:60,1')->name('cart.destroy');
+
+    Route::middleware('auth')->group(function (): void {
+        Route::get('/checkout', [Shop\CheckoutController::class, 'create'])->name('checkout.create');
+        Route::post('/checkout', [Shop\CheckoutController::class, 'store'])->middleware('throttle:forms')->name('checkout.store');
+    });
+
     Route::get('/wishlist', [Account\WishlistController::class, 'index'])->name('account.wishlist');
     Route::post('/wishlist/{product:slug}', [Account\WishlistController::class, 'store'])->middleware('throttle:60,1')->name('wishlist.store');
+    Route::post('/wishlist/{product:slug}/cart', [Account\WishlistController::class, 'moveToCart'])->middleware('throttle:60,1')->name('wishlist.cart');
     Route::delete('/wishlist/{product:slug}', [Account\WishlistController::class, 'destroy'])->middleware('throttle:60,1')->name('wishlist.destroy');
 
     Route::middleware(['auth'])->prefix('account')->name('account.')->group(function (): void {
         Route::get('/', Account\DashboardController::class)->name('dashboard');
+        Route::get('/orders', [Account\OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [Account\OrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/cancel', [Account\OrderController::class, 'cancel'])->name('orders.cancel');
         Route::get('/profile', [Account\ProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [Account\ProfileController::class, 'update'])->middleware('throttle:uploads')->name('profile.update');
         Route::get('/security', [Account\SecurityController::class, 'edit'])->name('security');
@@ -124,6 +138,20 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/purchase-orders/{purchase_order}/receive', [Admin\PurchaseOrderController::class, 'receiveForm'])->name('purchase-orders.receive');
     Route::post('/purchase-orders/{purchase_order}/receive', [Admin\PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive.store');
     Route::resource('purchase-orders', Admin\PurchaseOrderController::class);
+
+    Route::get('/orders', [Admin\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/pay', [Admin\OrderController::class, 'pay'])->name('orders.pay');
+    Route::post('/orders/{order}/ship', [Admin\OrderController::class, 'ship'])->name('orders.ship');
+    Route::post('/orders/{order}/complete', [Admin\OrderController::class, 'complete'])->name('orders.complete');
+    Route::post('/orders/{order}/cancel', [Admin\OrderController::class, 'cancel'])->name('orders.cancel');
+
+    Route::get('/tax', [Admin\TaxController::class, 'index'])->name('tax.index');
+    Route::get('/tax/create', [Admin\TaxController::class, 'create'])->name('tax.create');
+    Route::post('/tax', [Admin\TaxController::class, 'store'])->name('tax.store');
+    Route::get('/tax/{taxClass}/edit', [Admin\TaxController::class, 'edit'])->name('tax.edit');
+    Route::put('/tax/{taxClass}', [Admin\TaxController::class, 'update'])->name('tax.update');
+    Route::delete('/tax/{taxClass}', [Admin\TaxController::class, 'destroy'])->name('tax.destroy');
 
     Route::get('/settings', [Admin\SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/{group}', [Admin\SettingsController::class, 'edit'])->name('settings.edit');

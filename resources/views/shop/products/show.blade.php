@@ -119,6 +119,18 @@
                     </div>
                 @endif
 
+                @if ($current)
+                    <form method="POST" action="{{ route('cart.store') }}" class="mt-4 flex flex-wrap items-end gap-2">
+                        @csrf
+                        <input type="hidden" name="variant_id" value="{{ $current['id'] }}" :value="selected">
+                        <div>
+                            <label for="cart-quantity" class="form-label">{{ __('shop.cart.quantity') }}</label>
+                            <input id="cart-quantity" type="number" name="quantity" value="{{ max(1, (int) $product->min_order_quantity) }}" min="1" max="999" inputmode="numeric" class="form-control w-24">
+                        </div>
+                        <x-ui.button icon="cart" :disabled="! $current['available']" x-bind:disabled="!current()?.available">{{ __('shop.cart.add') }}</x-ui.button>
+                    </form>
+                @endif
+
                 @if ($product->translate('short_description'))
                     <p class="mt-4 text-sm">{{ $product->translate('short_description') }}</p>
                 @endif

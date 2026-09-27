@@ -61,6 +61,8 @@ class SettingsRegistry
             ],
             'shipping' => [
                 'free_shipping_threshold' => ['type' => 'integer', 'default' => 0, 'rules' => ['integer', 'min:0']],
+                'flat_rate' => ['type' => 'integer', 'default' => 660, 'rules' => ['integer', 'min:0']],
+                'frozen_surcharge' => ['type' => 'integer', 'default' => 440, 'rules' => ['integer', 'min:0']],
                 'min_lead_days' => ['type' => 'integer', 'default' => 2, 'rules' => ['integer', 'min:0', 'max:30']],
                 'max_days_ahead' => ['type' => 'integer', 'default' => 14, 'rules' => ['integer', 'min:1', 'max:60']],
                 'pickup_address' => ['type' => 'translatable_text', 'default' => ['ja' => '', 'en' => '']],

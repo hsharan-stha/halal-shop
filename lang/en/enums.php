@@ -91,6 +91,21 @@ return [
         'received' => 'Received',
         'cancelled' => 'Cancelled',
     ],
+    'order_status' => [
+        'pending' => 'Awaiting payment',
+        'confirmed' => 'Confirmed',
+        'shipped' => 'Shipped',
+        'completed' => 'Delivered',
+        'cancelled' => 'Cancelled',
+    ],
+    'payment_method' => [
+        'bank_transfer' => 'Bank transfer',
+        'cash_on_delivery' => 'Cash on delivery',
+    ],
+    'payment_status' => [
+        'unpaid' => 'Unpaid',
+        'paid' => 'Paid',
+    ],
     'stock_status' => [
         'in_stock' => 'In stock',
         'low_stock' => 'Low stock',
