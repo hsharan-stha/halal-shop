@@ -39,4 +39,14 @@ class CheckoutException extends RuntimeException
     {
         return new self(__('shop.checkout.errors.invalid_state'));
     }
+
+    public static function mixedShops(): self
+    {
+        return new self(__('shop.checkout.errors.mixed_shops'));
+    }
+
+    public static function pickupUnavailable(): self
+    {
+        return new self(__('shop.checkout.errors.pickup'));
+    }
 }

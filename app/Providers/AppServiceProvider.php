@@ -2,13 +2,25 @@
 
 namespace App\Providers;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\HalalCertification;
+use App\Models\InventoryBatch;
+use App\Models\InventoryItem;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\PurchaseOrder;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\BrandingService;
 use App\Services\LocaleService;
 use App\Services\SettingsService;
 use App\Support\PermissionCatalog;
+use App\Support\ShopAccess;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -40,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! $this->app->isProduction());
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
 
+        $this->configureShopTenancy();
         $this->configureAuthorization();
         $this->configureRateLimiting();
         $this->configurePasswords();
@@ -52,6 +65,42 @@ class AppServiceProvider extends ServiceProvider
 
         Paginator::defaultView('pagination.default');
         Paginator::defaultSimpleView('pagination.simple');
+    }
+
+    private function configureShopTenancy(): void
+    {
+        $ownOnly = function (Builder $query): void {
+            if (ShopAccess::$tenantId !== null) {
+                $query->where($query->getModel()->getTable().'.shop_id', ShopAccess::$tenantId);
+            }
+        };
+
+        $ownOrPlatform = function (Builder $query): void {
+            if (ShopAccess::$tenantId !== null) {
+                $column = $query->getModel()->getTable().'.shop_id';
+
+                $query->where(fn (Builder $inner) => $inner->whereNull($column)->orWhere($column, ShopAccess::$tenantId));
+            }
+        };
+
+        $throughRelation = fn (string $relation) => function (Builder $query) use ($relation): void {
+            if (ShopAccess::$tenantId !== null) {
+                $query->whereHas($relation);
+            }
+        };
+
+        Product::addGlobalScope('shop-tenant', $ownOnly);
+        Order::addGlobalScope('shop-tenant', $ownOnly);
+        PurchaseOrder::addGlobalScope('shop-tenant', $ownOnly);
+
+        Category::addGlobalScope('shop-tenant', $ownOrPlatform);
+        Brand::addGlobalScope('shop-tenant', $ownOrPlatform);
+        HalalCertification::addGlobalScope('shop-tenant', $ownOrPlatform);
+        Supplier::addGlobalScope('shop-tenant', $ownOrPlatform);
+
+        InventoryItem::addGlobalScope('shop-tenant', $throughRelation('variant.product'));
+        InventoryBatch::addGlobalScope('shop-tenant', $throughRelation('item.variant.product'));
+        SupplierProduct::addGlobalScope('shop-tenant', $throughRelation('variant.product'));
     }
 
     private function configureAuthorization(): void

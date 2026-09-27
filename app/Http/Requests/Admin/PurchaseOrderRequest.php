@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\ProductVariant;
+use App\Models\PurchaseOrder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class PurchaseOrderRequest extends FormRequest
 {
@@ -40,6 +43,44 @@ class PurchaseOrderRequest extends FormRequest
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:'.self::MAX_QUANTITY],
             'lines.*.unit_cost' => ['required', 'integer', 'min:0', 'max:'.self::MAX_UNIT_COST],
         ];
+    }
+
+    /**
+     * Every line must come from the same halal shop, and that shop owns the
+     * order. A shop only sees its own variants, so this also stops it from
+     * ordering stock for another shop.
+     *
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $order = $this->route('purchase_order');
+            $shopId = $this->shopId();
+
+            if ($shopId === null || ($order instanceof PurchaseOrder && $order->shop_id !== null && (int) $order->shop_id !== $shopId)) {
+                $validator->errors()->add('lines', __('admin.purchase_orders.single_shop'));
+            }
+        }];
+    }
+
+    /**
+     * The shop that owns every line, or null when the lines are mixed.
+     */
+    public function shopId(): ?int
+    {
+        $shopIds = ProductVariant::query()
+            ->whereKey(array_column($this->lines(), 'product_variant_id'))
+            ->with('product:id,shop_id')
+            ->get()
+            ->map(fn (ProductVariant $variant) => $variant->product?->shop_id)
+            ->unique();
+
+        return $shopIds->count() === 1 && $shopIds->first() !== null ? (int) $shopIds->first() : null;
     }
 
     /**

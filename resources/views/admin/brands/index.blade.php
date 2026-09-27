@@ -40,7 +40,7 @@
                                 <span class="grid size-9 place-items-center rounded-lg bg-surface-muted font-semibold text-ink-muted">{{ mb_substr($brand->name, 0, 1) }}</span>
                             @endif
                             <div class="min-w-0">
-                                <p class="font-medium">{{ $brand->localizedName() }}</p>
+                                <p class="flex flex-wrap items-center gap-2 font-medium">{{ $brand->localizedName() }} <x-admin.owner-badge :row="$brand" /></p>
                                 <p class="font-mono text-xs text-ink-muted">{{ $brand->slug }}</p>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
                 @foreach ($brands as $brand)
                     <div class="flex items-start justify-between gap-3 p-4">
                         <div class="min-w-0">
-                            <p class="font-medium">{{ $brand->localizedName() }}</p>
+                            <p class="flex flex-wrap items-center gap-2 font-medium">{{ $brand->localizedName() }} <x-admin.owner-badge :row="$brand" /></p>
                             <p class="text-xs text-ink-muted">{{ trans_choice('admin.categories.product_count', $brand->products_count, ['count' => $brand->products_count]) }} · {{ $brand->is_active ? __('admin.active') : __('admin.inactive') }}</p>
                         </div>
                         @include('admin.brands._actions')

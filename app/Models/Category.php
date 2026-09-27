@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToShop;
 use App\Models\Concerns\HasTranslations;
 use App\Services\Media\ImageStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,10 +14,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
-#[Fillable(['parent_id', 'name', 'japanese_name', 'slug', 'description', 'icon', 'sort_order', 'is_active', 'meta_title', 'meta_description'])]
+#[Fillable(['shop_id', 'parent_id', 'name', 'japanese_name', 'slug', 'description', 'icon', 'sort_order', 'is_active', 'meta_title', 'meta_description'])]
 class Category extends Model
 {
-    use Auditable, HasFactory, HasTranslations;
+    use Auditable, BelongsToShop, HasFactory, HasTranslations;
 
     public const ICONS = ['squares', 'box', 'cube', 'snowflake', 'fire', 'sparkles', 'tag', 'star', 'heart', 'thermometer', 'store', 'layers', 'sun'];
 

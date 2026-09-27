@@ -32,6 +32,9 @@
         <div class="min-w-0 space-y-6 lg:col-span-2">
             <x-ui.card :title="__('admin.basic_information')">
                 <div class="grid gap-4 md:grid-cols-2">
+                    @if (! $editing && ! empty($shops))
+                        <x-ui.select name="shop_id" :label="__('admin.halal_shops.name')" :options="$shops" :value="old('shop_id', $product->shop_id)" required :placeholder="__('admin.halal_shops.name')" wrapper-class="md:col-span-2" />
+                    @endif
                     <x-ui.input name="name" :label="__('admin.name_en')" :value="$product->name" required maxlength="200" />
                     <x-ui.input name="japanese_name" :label="__('admin.name_ja')" :value="$product->japanese_name" maxlength="200" lang="ja" />
                     <x-ui.input name="sku" :label="__('admin.products.sku')" :value="$product->sku" required maxlength="64" class="font-mono uppercase" :hint="__('admin.products.sku_hint')" />

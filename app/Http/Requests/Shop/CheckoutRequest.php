@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Shop;
 
+use App\Enums\DeliveryDestination;
 use App\Enums\PaymentMethod;
 use App\Rules\JapanesePhone;
 use App\Support\Prefectures;
@@ -23,6 +24,10 @@ class CheckoutRequest extends FormRequest
             $this->merge(['postal_code' => substr($digits, 0, 3).'-'.substr($digits, 3)]);
         }
 
+        if (! $this->filled('delivery_to')) {
+            $this->merge(['delivery_to' => DeliveryDestination::Customer->value]);
+        }
+
         if (is_string($this->input('phone')) && $this->input('phone') !== '') {
             $this->merge(['phone' => JapanesePhone::normalize($this->input('phone'))]);
         }
@@ -33,15 +38,20 @@ class CheckoutRequest extends FormRequest
      */
     public function rules(): array
     {
+        $toShop = $this->input('delivery_to') === DeliveryDestination::Shop->value;
+        $address = $toShop ? 'nullable' : 'required';
+
         return [
+            'delivery_to' => ['required', Rule::enum(DeliveryDestination::class)],
+            'pickup_shop_id' => [$toShop ? 'required' : 'nullable', 'integer', Rule::exists('shops', 'id')->where('is_active', true)],
             'recipient_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', new JapanesePhone],
-            'postal_code' => ['required', 'string', 'regex:/^\d{3}-\d{4}$/'],
-            'prefecture' => ['required', 'string', Rule::in(Prefectures::names())],
-            'city' => ['required', 'string', 'max:80'],
+            'postal_code' => [$address, 'string', 'regex:/^\d{3}-\d{4}$/'],
+            'prefecture' => [$address, 'string', Rule::in(Prefectures::names())],
+            'city' => [$address, 'string', 'max:80'],
             'ward' => ['nullable', 'string', 'max:80'],
-            'town' => ['required', 'string', 'max:80'],
-            'street' => ['required', 'string', 'max:80'],
+            'town' => [$address, 'string', 'max:80'],
+            'street' => [$address, 'string', 'max:80'],
             'building' => ['nullable', 'string', 'max:80'],
             'room' => ['nullable', 'string', 'max:40'],
             'customer_note' => ['nullable', 'string', 'max:500'],

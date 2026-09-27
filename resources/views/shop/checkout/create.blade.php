@@ -2,24 +2,45 @@
     <div class="mx-auto max-w-3xl px-4 py-6 lg:px-6">
         <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ __('shop.checkout.title') }}</h1>
 
-        <form method="POST" action="{{ route('checkout.store') }}" class="mt-6 grid gap-6">
+        <form method="POST" action="{{ route('checkout.store') }}" class="mt-6 grid gap-6" x-data="{ delivery: '{{ old('delivery_to', 'customer') }}' }">
             @csrf
 
+            <section class="card space-y-3 p-4 sm:p-6">
+                <h2 class="text-lg font-semibold">{{ __('shop.checkout.delivery') }}</h2>
+                @if ($fulfillingShop)
+                    <p class="text-sm text-ink-muted">{{ __('shop.checkout.fulfilled_by', ['shop' => $fulfillingShop->name]) }}</p>
+                @endif
+                <label class="flex min-h-11 items-center gap-3 rounded-xl border border-line px-3 py-2">
+                    <input type="radio" name="delivery_to" value="customer" x-model="delivery" @checked(old('delivery_to', 'customer') === 'customer') required>
+                    <span>{{ __('shop.checkout.delivery_customer') }}</span>
+                </label>
+                <label class="flex min-h-11 items-center gap-3 rounded-xl border border-line px-3 py-2">
+                    <input type="radio" name="delivery_to" value="shop" x-model="delivery" @checked(old('delivery_to') === 'shop')>
+                    <span>{{ __('shop.checkout.delivery_shop') }}</span>
+                </label>
+                <div x-show="delivery === 'shop'" x-cloak>
+                    <x-ui.select name="pickup_shop_id" :label="__('admin.halal_shops.name')" :options="$shops->mapWithKeys(fn ($shop) => [$shop->id => $shop->name.' · '.\App\Support\Prefectures::label($shop->prefecture)])->all()" :value="old('pickup_shop_id')" :placeholder="__('admin.halal_shops.name')" />
+                </div>
+            </section>
+
             <section class="card space-y-4 p-4 sm:p-6">
-                <h2 class="text-lg font-semibold">{{ __('shop.checkout.address') }}</h2>
                 <x-ui.input name="recipient_name" :label="__('shop.checkout.recipient')" :value="$address?->recipient_name" required />
                 <x-ui.input name="phone" :label="__('shop.fields.phone')" :value="$address?->phone" :hint="__('shop.hints.phone')" required />
+            </section>
+
+            <section class="card space-y-4 p-4 sm:p-6" x-show="delivery === 'customer'" x-cloak>
+                <h2 class="text-lg font-semibold">{{ __('shop.checkout.address') }}</h2>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <x-ui.input name="postal_code" :label="__('shop.checkout.postal_code')" :value="$address?->postal_code" placeholder="123-4567" required />
-                    <x-ui.select name="prefecture" :label="__('shop.checkout.prefecture')" :options="\App\Support\Prefectures::options()" :value="$address?->prefecture" :placeholder="__('shop.catalog.any')" required />
+                    <x-ui.input name="postal_code" :label="__('shop.checkout.postal_code')" :value="$address?->postal_code" placeholder="123-4567" />
+                    <x-ui.select name="prefecture" :label="__('shop.checkout.prefecture')" :options="\App\Support\Prefectures::options()" :value="$address?->prefecture" :placeholder="__('shop.catalog.any')" />
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <x-ui.input name="city" :label="__('shop.checkout.city')" :value="$address?->city" required />
+                    <x-ui.input name="city" :label="__('shop.checkout.city')" :value="$address?->city" />
                     <x-ui.input name="ward" :label="__('shop.checkout.ward')" :value="$address?->ward" />
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <x-ui.input name="town" :label="__('shop.checkout.town')" :value="$address?->town" required />
-                    <x-ui.input name="street" :label="__('shop.checkout.street')" :value="$address?->street" required />
+                    <x-ui.input name="town" :label="__('shop.checkout.town')" :value="$address?->town" />
+                    <x-ui.input name="street" :label="__('shop.checkout.street')" :value="$address?->street" />
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-ui.input name="building" :label="__('shop.checkout.building')" :value="$address?->building" />

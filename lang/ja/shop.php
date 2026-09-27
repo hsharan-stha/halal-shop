@@ -333,6 +333,17 @@ return [
         'count' => ':count点|:count点',
     ],
 
+    'halal_shops' => [
+        'title' => 'ハラール店',
+        'description' => '現在地を共有すると、近い店舗から表示します。',
+        'search' => '店舗名で検索',
+        'use_location' => '現在地を使う',
+        'empty' => '該当する店舗はありません。',
+        'all_items' => 'この店舗の商品',
+        'sold_by' => '販売店舗',
+        'also_at' => '他の店舗でも取り扱い',
+    ],
+
     'checkout' => [
         'title' => '注文手続き',
         'place' => '注文を確定する',
@@ -349,6 +360,10 @@ return [
         'building' => '建物名',
         'room' => '部屋番号',
         'address' => 'お届け先',
+        'delivery' => 'お届け方法',
+        'fulfilled_by' => '出荷店舗: :shop',
+        'delivery_customer' => 'お客様へ届ける',
+        'delivery_shop' => 'ハラール店へ届ける',
         'pay_later' => 'この注文は未払いです。店舗が入金を確認するまで、支払い済みにはなりません。',
         'bank_instructions' => '振込先',
         'cod_notice' => '商品お届け時に配送員へお支払いください。代引き手数料を含んでいます。',
@@ -359,6 +374,8 @@ return [
             'payment' => 'この注文では、そのお支払い方法は使えません。',
             'not_cancellable' => 'この注文はキャンセルできません。',
             'invalid_state' => 'この注文では、その操作はできません。',
+            'mixed_shops' => 'カートに複数の店舗の商品があります。1店舗ずつ注文してください。',
+            'pickup' => 'その店舗へは配送できません。',
         ],
     ],
 

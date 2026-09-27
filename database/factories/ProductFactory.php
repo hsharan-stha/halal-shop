@@ -8,6 +8,7 @@ use App\Enums\StorageType;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Shop;
 use App\Models\TaxClass;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class ProductFactory extends Factory
         $name = ucfirst(fake()->unique()->words(3, true));
 
         return [
+            'shop_id' => Shop::factory(),
             'category_id' => Category::factory(),
             'tax_class_id' => fn () => TaxClass::query()->where('code', 'reduced')->value('id') ?? TaxClass::factory()->withRate(800),
             'sku' => 'SKU-'.Str::upper(Str::random(8)),

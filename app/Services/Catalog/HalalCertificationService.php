@@ -7,6 +7,7 @@ use App\Models\HalalCertification;
 use App\Models\User;
 use App\Notifications\HalalCertificateExpiring;
 use App\Services\AuditLogger;
+use App\Support\ShopAccess;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -150,7 +151,7 @@ class HalalCertificationService
                     }
 
                     $notification = new HalalCertificateExpiring($certification, $days);
-                    Notification::send($recipients, $notification);
+                    Notification::send($this->recipientsFor($certification, $recipients), $notification);
 
                     if (filled($alertEmail)) {
                         Notification::route('mail', $alertEmail)->notify($notification);
@@ -171,6 +172,23 @@ class HalalCertificationService
     {
         return User::query()->staff()->where('status', 'active')->with('roles.permissions')->get()
             ->filter(fn (User $user) => $user->hasPermission('halal_certificates.view'))
+            ->values();
+    }
+
+    /**
+     * A halal shop is only told about shared certificates and its own.
+     *
+     * @param  Collection<int, User>  $staff
+     * @return Collection<int, User>
+     */
+    private function recipientsFor(HalalCertification $certification, Collection $staff): Collection
+    {
+        return $staff
+            ->filter(function (User $user) use ($certification): bool {
+                $shopId = ShopAccess::id($user);
+
+                return $shopId === null || $certification->shop_id === null || $shopId === (int) $certification->shop_id;
+            })
             ->values();
     }
 

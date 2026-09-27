@@ -68,7 +68,7 @@ class LoginTest extends TestCase
 
     public function test_staff_login_and_logout_are_audited(): void
     {
-        $admin = $this->staff(RoleSlug::Admin, ['email' => 'admin@example.com']);
+        $admin = $this->staff(RoleSlug::SuperAdmin, ['email' => 'admin@example.com']);
 
         $this->post(route('admin.login'), ['email' => 'admin@example.com', 'password' => 'password'])
             ->assertRedirect(route('admin.dashboard'));

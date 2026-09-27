@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\HalalCertification;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Shop;
 use App\Models\Supplier;
 use App\Models\TaxClass;
 use App\Models\User;
@@ -26,6 +27,9 @@ class CatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        $shop = $this->mainShop();
+        (new UserSeeder)->ensureShopLogin($shop);
+
         if (Product::withTrashed()->exists()) {
             return;
         }
@@ -41,6 +45,7 @@ class CatalogSeeder extends Seeder
             [$sku, $name, $japaneseName, $category, $brand, $halal, $storage, $price, $variants, $certificate] = $row + [8 => [], 9 => null];
 
             $product = new Product([
+                'shop_id' => $shop->id,
                 'category_id' => $categories[$category]->id,
                 'brand_id' => $brands[$brand]->id,
                 'supplier_id' => $suppliers[$index % count($suppliers)]->id,
@@ -109,6 +114,27 @@ class CatalogSeeder extends Seeder
                 $product->halalCertifications()->attach($certificates[$certificate]->id);
             }
         }
+    }
+
+    /**
+     * The shop that owns the fictional catalogue.
+     */
+    private function mainShop(): Shop
+    {
+        return Shop::query()->firstOrCreate(
+            ['slug' => 'main-shop'],
+            [
+                'name' => 'メイン店舗',
+                'prefecture' => '東京都',
+                'city' => '千代田区',
+                'town' => '丸の内',
+                'street' => '1-1-1',
+                'postal_code' => '100-0005',
+                'latitude' => 35.681236,
+                'longitude' => 139.767125,
+                'is_active' => true,
+            ],
+        );
     }
 
     /**

@@ -41,7 +41,7 @@ class PurchaseOrderController extends Controller implements HasMiddleware
         ]);
 
         $orders = PurchaseOrder::query()
-            ->with('supplier:id,name,deleted_at')
+            ->with(['supplier:id,name,deleted_at', 'shop:id,name'])
             ->withCount('items')
             ->when($filters['q'] ?? null, fn (Builder $query, string $q) => $query->where('order_number', 'like', '%'.$q.'%'))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
@@ -64,7 +64,7 @@ class PurchaseOrderController extends Controller implements HasMiddleware
 
     public function store(PurchaseOrderRequest $request, PurchaseOrderService $service): RedirectResponse
     {
-        $order = $service->save(new PurchaseOrder, $request->attributesForModel(), $request->lines(), $request->user());
+        $order = $service->save(new PurchaseOrder(['shop_id' => $request->shopId()]), $request->attributesForModel(), $request->lines(), $request->user());
 
         return redirect()->route('admin.purchase-orders.show', $order)->with('success', __('admin.purchase_orders.created'));
     }
@@ -98,6 +98,7 @@ class PurchaseOrderController extends Controller implements HasMiddleware
             return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('error', __('admin.purchase_orders.not_editable'));
         }
 
+        $purchaseOrder->shop_id ??= $request->shopId();
         $service->save($purchaseOrder, $request->attributesForModel(), $request->lines(), $request->user());
 
         return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('success', __('admin.purchase_orders.updated'));

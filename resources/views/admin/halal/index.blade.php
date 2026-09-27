@@ -62,7 +62,7 @@
             @foreach ($certifications as $certification)
                 <tr>
                     <td>
-                        <p class="font-medium">{{ $certification->certifying_body }}</p>
+                        <p class="flex flex-wrap items-center gap-2 font-medium">{{ $certification->certifying_body }} <x-admin.owner-badge :row="$certification" /></p>
                         <p class="font-mono text-xs text-ink-muted">#{{ $certification->certificate_number }}</p>
                     </td>
                     <td class="text-sm">{{ $certification->brand?->localizedName() ?? '—' }}</td>

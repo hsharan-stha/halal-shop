@@ -19,7 +19,7 @@ class CategoryManagementTest extends TestCase
     {
         $parent = Category::factory()->create();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.categories.store'), [
                 'name' => 'Frozen Chicken',
                 'japanese_name' => '冷凍鶏肉',
@@ -42,7 +42,7 @@ class CategoryManagementTest extends TestCase
         $child = Category::factory()->create(['parent_id' => $root->id]);
         $grandchild = Category::factory()->create(['parent_id' => $child->id]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->put(route('admin.categories.update', $root), ['name' => $root->name, 'slug' => $root->slug, 'parent_id' => $grandchild->id, 'is_active' => '1'])
             ->assertSessionHasErrors('parent_id');
 
@@ -55,7 +55,7 @@ class CategoryManagementTest extends TestCase
         $category = Category::factory()->create();
         Product::factory()->create(['category_id' => $category->id]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->delete(route('admin.categories.destroy', $category))
             ->assertSessionHas('error');
 
@@ -68,7 +68,7 @@ class CategoryManagementTest extends TestCase
         $middle = Category::factory()->create(['parent_id' => $root->id]);
         $leaf = Category::factory()->create(['parent_id' => $middle->id]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))->delete(route('admin.categories.destroy', $middle))->assertRedirect();
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))->delete(route('admin.categories.destroy', $middle))->assertRedirect();
 
         $this->assertModelMissing($middle);
         $this->assertSame($root->id, $leaf->fresh()->parent_id);
@@ -78,7 +78,7 @@ class CategoryManagementTest extends TestCase
     {
         Storage::fake(config('shop.media_disk'));
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.categories.store'), [
                 'name' => 'Spices',
                 'is_active' => '1',
@@ -91,18 +91,9 @@ class CategoryManagementTest extends TestCase
         Storage::disk(config('shop.media_disk'))->assertExists($path);
     }
 
-    public function test_view_only_staff_cannot_manage_categories(): void
+    public function test_a_customer_cannot_view_categories(): void
     {
-        $contentManager = $this->staff(RoleSlug::ContentManager);
-
-        $this->actingAs($contentManager)->get(route('admin.categories.index'))->assertOk();
-        $this->actingAs($contentManager)->get(route('admin.categories.create'))->assertForbidden();
-        $this->actingAs($contentManager)->post(route('admin.categories.store'), ['name' => 'X'])->assertForbidden();
-    }
-
-    public function test_staff_without_permission_cannot_view_categories(): void
-    {
-        $this->actingAs($this->staff(RoleSlug::SupportAgent))->get(route('admin.categories.index'))->assertForbidden();
+        $this->actingAs($this->customer())->get(route('admin.categories.index'))->assertForbidden();
     }
 
     public function test_index_renders_tree(): void
@@ -110,7 +101,7 @@ class CategoryManagementTest extends TestCase
         $root = Category::factory()->create(['name' => 'Root Cat']);
         Category::factory()->create(['name' => 'Leaf Cat', 'parent_id' => $root->id]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->get(route('admin.categories.index'))
             ->assertOk()
             ->assertSeeInOrder(['Root Cat', 'Leaf Cat']);

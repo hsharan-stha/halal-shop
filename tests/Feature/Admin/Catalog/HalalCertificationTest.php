@@ -7,6 +7,7 @@ use App\Enums\HalalStatus;
 use App\Enums\RoleSlug;
 use App\Models\HalalCertification;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Notifications\HalalCertificateExpiring;
 use App\Services\Catalog\HalalCertificationService;
 use Database\Seeders\TaxSeeder;
@@ -34,7 +35,7 @@ class HalalCertificationTest extends TestCase
     {
         $product = Product::factory()->create();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.halal-certifications.store'), [
                 'certifying_body' => 'Demo Halal Council',
                 'certificate_number' => 'DHC-001',
@@ -56,7 +57,7 @@ class HalalCertificationTest extends TestCase
 
     public function test_executable_certificate_uploads_are_rejected(): void
     {
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.halal-certifications.store'), [
                 'certifying_body' => 'Demo',
                 'certificate_number' => 'X-1',
@@ -71,13 +72,13 @@ class HalalCertificationTest extends TestCase
         $certificate = HalalCertification::factory()->withFile()->create();
         Storage::disk(config('shop.private_disk'))->put($certificate->file_path, '%PDF-1.4 demo');
 
-        $manager = $this->staff(RoleSlug::ProductManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
         $signed = app(HalalCertificationService::class)->fileUrl($certificate);
 
         $this->get($signed)->assertRedirect(route('admin.login'));
         $this->actingAs($manager)->get(route('admin.halal-certifications.file', $certificate))->assertForbidden();
         $this->actingAs($manager)->get($signed.'x')->assertForbidden();
-        $this->actingAs($this->staff(RoleSlug::SupportAgent))->get($signed)->assertForbidden();
+        $this->actingAs($this->customer())->get($signed)->assertForbidden();
 
         $response = $this->actingAs($manager)->get($signed);
         $response->assertOk();
@@ -93,18 +94,18 @@ class HalalCertificationTest extends TestCase
 
         $this->travel(11)->minutes();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))->get($url)->assertForbidden();
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))->get($url)->assertForbidden();
     }
 
     public function test_only_staff_with_verify_permission_can_verify(): void
     {
         $certificate = HalalCertification::factory()->withFile()->create();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::HalalShop))
             ->post(route('admin.halal-certifications.verify', $certificate))
             ->assertForbidden();
 
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
         $this->actingAs($admin)->post(route('admin.halal-certifications.verify', $certificate))->assertSessionHas('success');
 
         $certificate->refresh();
@@ -114,7 +115,7 @@ class HalalCertificationTest extends TestCase
 
     public function test_certificate_without_file_or_expired_cannot_be_verified(): void
     {
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
         $noFile = HalalCertification::factory()->create();
         $expired = HalalCertification::factory()->withFile()->expiresOn(now()->subDay())->create();
 
@@ -129,7 +130,7 @@ class HalalCertificationTest extends TestCase
     {
         $certificate = HalalCertification::factory()->verified()->create();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->put(route('admin.halal-certifications.update', $certificate), [
                 'certifying_body' => $certificate->certifying_body,
                 'certificate_number' => $certificate->certificate_number,
@@ -144,7 +145,7 @@ class HalalCertificationTest extends TestCase
     public function test_reject_requires_reason(): void
     {
         $certificate = HalalCertification::factory()->withFile()->create();
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($admin)->post(route('admin.halal-certifications.reject', $certificate), [])->assertSessionHasErrors('reason');
         $this->actingAs($admin)->post(route('admin.halal-certifications.reject', $certificate), ['reason' => 'Number not in registry'])->assertSessionHas('success');
@@ -187,9 +188,12 @@ class HalalCertificationTest extends TestCase
     public function test_expiry_alerts_are_sent_once_per_threshold(): void
     {
         Notification::fake();
-        $recipient = $this->staff(RoleSlug::ProductManager);
-        $nonRecipient = $this->staff(RoleSlug::SupportAgent);
-        $certificate = HalalCertification::factory()->verified()->expiresOn(now('Asia/Tokyo')->addDays(25))->create();
+        $recipient = $this->staff(RoleSlug::SuperAdmin);
+        $nonRecipient = $this->staff(RoleSlug::HalalShop);
+        $nonRecipient->forceFill(['shop_id' => Shop::factory()->create()->id])->save();
+        $certificate = HalalCertification::factory()->verified()->expiresOn(now('Asia/Tokyo')->addDays(25))->create([
+            'shop_id' => Shop::factory()->create()->id,
+        ]);
         HalalCertification::factory()->verified()->expiresOn(now('Asia/Tokyo')->addDays(200))->create();
 
         $this->artisan('halal:check-expiry')->assertSuccessful();
@@ -208,7 +212,7 @@ class HalalCertificationTest extends TestCase
     public function test_expired_certificate_triggers_alert(): void
     {
         Notification::fake();
-        $recipient = $this->staff(RoleSlug::Admin);
+        $recipient = $this->staff(RoleSlug::SuperAdmin);
         $certificate = HalalCertification::factory()->verified()->expiresOn(now('Asia/Tokyo')->subDays(2))->create();
 
         $this->artisan('halal:check-expiry')->assertSuccessful();
@@ -220,7 +224,7 @@ class HalalCertificationTest extends TestCase
     public function test_halal_dashboard_and_pages_render(): void
     {
         $certificate = HalalCertification::factory()->verified()->create(['certifying_body' => 'Visible Council']);
-        $manager = $this->staff(RoleSlug::ProductManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)->get(route('admin.halal-certifications.index'))->assertOk()->assertSee('Visible Council');
         $this->actingAs($manager)->get(route('admin.halal-certifications.index', ['expiry' => 'expired']))->assertOk();

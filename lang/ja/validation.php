@@ -159,6 +159,7 @@ return [
 
     'japanese_phone' => '正しい電話番号を入力してください（例：090-1234-5678）。',
     'japanese_postal_code' => '郵便番号は7桁で入力してください（例：123-4567）。',
+    'variant_not_in_shop' => 'この店舗の商品を選択してください。',
 
     'custom' => [],
 

@@ -74,9 +74,4 @@ class UserFactory extends Factory
     {
         return $this->withRole(RoleSlug::SuperAdmin);
     }
-
-    public function admin(): static
-    {
-        return $this->withRole(RoleSlug::Admin);
-    }
 }

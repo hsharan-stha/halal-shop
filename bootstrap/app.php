@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplyShopTenancy;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureStoreIsAvailable;
 use App\Http\Middleware\EnsureUserIsStaff;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -39,8 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        $middleware->prependToPriorityList(
+            SubstituteBindings::class,
+            ApplyShopTenancy::class,
+        );
+
         $middleware->alias([
             'staff' => EnsureUserIsStaff::class,
+            'shop.tenant' => ApplyShopTenancy::class,
             'store' => EnsureStoreIsAvailable::class,
             'active' => EnsureAccountIsActive::class,
         ]);

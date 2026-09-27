@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CategoryRequest;
 use App\Models\Category;
 use App\Services\Media\ImageStorage;
+use App\Support\ShopAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -27,7 +28,7 @@ class CategoryController extends Controller implements HasMiddleware
     {
         $search = trim((string) $request->string('q'));
 
-        $query = Category::query()->withCount(['products', 'children'])->with('parent:id,name,japanese_name')->ordered();
+        $query = Category::query()->withCount(['products', 'children'])->with(['parent:id,name,japanese_name', 'shop:id,name'])->ordered();
 
         if ($search !== '') {
             $categories = $query
@@ -75,6 +76,7 @@ class CategoryController extends Controller implements HasMiddleware
     public function store(CategoryRequest $request, ImageStorage $images): RedirectResponse
     {
         $category = new Category($request->attributesForModel());
+        $category->shop_id = ShopAccess::$tenantId;
 
         if ($request->hasFile('image')) {
             $category->image_path = $images->store($request->file('image'), 'categories', 1200)['path'];
@@ -87,6 +89,8 @@ class CategoryController extends Controller implements HasMiddleware
 
     public function edit(Category $category): View
     {
+        $this->authorizeShopOwnership($category->shop_id);
+
         return view('admin.categories.form', [
             'category' => $category,
             'parents' => Category::treeOptions($category->descendantAndSelfIds()),
@@ -95,6 +99,8 @@ class CategoryController extends Controller implements HasMiddleware
 
     public function update(CategoryRequest $request, Category $category, ImageStorage $images): RedirectResponse
     {
+        $this->authorizeShopOwnership($category->shop_id);
+
         $category->fill($request->attributesForModel());
         $previous = $category->image_path;
 
@@ -115,6 +121,8 @@ class CategoryController extends Controller implements HasMiddleware
 
     public function destroy(Category $category, ImageStorage $images): RedirectResponse
     {
+        $this->authorizeShopOwnership($category->shop_id);
+
         if ($category->products()->withTrashed()->exists()) {
             return back()->with('error', __('admin.categories.has_products'));
         }

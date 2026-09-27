@@ -41,6 +41,7 @@
                 <tr>
                     <td>
                         <a href="{{ route('admin.suppliers.show', $supplier) }}" class="font-medium hover:text-primary">{{ $supplier->name }}</a>
+                        <x-admin.owner-badge :row="$supplier" />
                         <p class="text-xs text-ink-muted">
                             @if ($supplier->code)<span class="font-mono">{{ $supplier->code }}</span> · @endif{{ $supplier->company_name ?: country_name($supplier->country_code) }}
                         </p>
@@ -59,7 +60,7 @@
                 @foreach ($suppliers as $supplier)
                     <div class="flex items-start justify-between gap-3 p-4">
                         <a href="{{ route('admin.suppliers.show', $supplier) }}" class="min-w-0">
-                            <p class="font-medium">{{ $supplier->name }}</p>
+                            <p class="flex flex-wrap items-center gap-2 font-medium">{{ $supplier->name }} <x-admin.owner-badge :row="$supplier" /></p>
                             <p class="text-xs text-ink-muted">{{ trans_choice('admin.suppliers.product_count', $supplier->supplier_products_count, ['count' => $supplier->supplier_products_count]) }} · {{ $supplier->is_active ? __('admin.active') : __('admin.inactive') }}</p>
                         </a>
                         @include('admin.suppliers._actions')

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SupplierRequest;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
+use App\Support\ShopAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class SupplierController extends Controller implements HasMiddleware
         ]);
 
         $suppliers = Supplier::query()
+            ->with('shop:id,name')
             ->withCount(['supplierProducts', 'purchaseOrders'])
             ->when($filters['q'] ?? null, fn (Builder $query, string $q) => $query->where(fn (Builder $inner) => $inner
                 ->where('name', 'like', '%'.$q.'%')
@@ -52,7 +54,7 @@ class SupplierController extends Controller implements HasMiddleware
 
     public function store(SupplierRequest $request): RedirectResponse
     {
-        $supplier = Supplier::query()->create($request->attributesForModel());
+        $supplier = Supplier::query()->create($request->attributesForModel() + ['shop_id' => ShopAccess::$tenantId]);
 
         return redirect()->route('admin.suppliers.show', $supplier)->with('success', __('admin.suppliers.created'));
     }
@@ -72,11 +74,15 @@ class SupplierController extends Controller implements HasMiddleware
 
     public function edit(Supplier $supplier): View
     {
+        $this->authorizeShopOwnership($supplier->shop_id);
+
         return view('admin.suppliers.form', ['supplier' => $supplier]);
     }
 
     public function update(SupplierRequest $request, Supplier $supplier): RedirectResponse
     {
+        $this->authorizeShopOwnership($supplier->shop_id);
+
         $supplier->update($request->attributesForModel());
 
         return redirect()->route('admin.suppliers.show', $supplier)->with('success', __('admin.suppliers.updated'));
@@ -84,6 +90,8 @@ class SupplierController extends Controller implements HasMiddleware
 
     public function destroy(Supplier $supplier): RedirectResponse
     {
+        $this->authorizeShopOwnership($supplier->shop_id);
+
         if ($supplier->hasOpenPurchaseOrders()) {
             return back()->with('error', __('admin.suppliers.has_open_orders'));
         }

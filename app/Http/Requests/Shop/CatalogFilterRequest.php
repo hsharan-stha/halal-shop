@@ -19,7 +19,7 @@ class CatalogFilterRequest extends FormRequest
         $this->merge([
             'q' => trim((string) $this->input('q', '')) ?: null,
             'country' => $this->filled('country') ? strtoupper((string) $this->input('country')) : null,
-            'sort' => $this->input('sort') ?: 'newest',
+            'sort' => $this->input('sort') ?: (session()->has('customer_latitude') ? 'nearest' : 'newest'),
         ]);
     }
 
@@ -32,18 +32,19 @@ class CatalogFilterRequest extends FormRequest
             'q' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:120'],
             'brand' => ['nullable', 'string', 'max:120'],
+            'shop' => ['nullable', 'string', 'max:120'],
             'halal' => ['nullable', Rule::enum(HalalStatus::class)],
             'storage' => ['nullable', Rule::enum(StorageType::class)],
             'country' => ['nullable', 'string', 'size:2', 'alpha:ascii'],
             'availability' => ['nullable', Rule::in(['in_stock', 'out_of_stock'])],
             'min_price' => ['nullable', 'integer', 'min:0', 'max:10000000'],
             'max_price' => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'sort' => ['required', Rule::in(['newest', 'price_asc', 'price_desc', 'name'])],
+            'sort' => ['required', Rule::in(['newest', 'nearest', 'price_asc', 'price_desc', 'name'])],
         ];
     }
 
     /**
-     * @return array{q: ?string, category: ?string, brand: ?string, halal: ?string, storage: ?string, country: ?string, availability: ?string, min_price: ?int, max_price: ?int, sort: string}
+     * @return array{q: ?string, category: ?string, brand: ?string, shop: ?string, halal: ?string, storage: ?string, country: ?string, availability: ?string, min_price: ?int, max_price: ?int, sort: string}
      */
     public function filters(): array
     {
@@ -60,6 +61,7 @@ class CatalogFilterRequest extends FormRequest
             'category' => $data['category'] ?? null,
             'brand' => $data['brand'] ?? null,
             'halal' => $data['halal'] ?? null,
+            'shop' => $data['shop'] ?? null,
             'storage' => $data['storage'] ?? null,
             'country' => $data['country'] ?? null,
             'availability' => $data['availability'] ?? null,

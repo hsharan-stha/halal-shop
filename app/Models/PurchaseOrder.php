@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToShop;
 use Database\Factories\PurchaseOrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,11 +12,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['supplier_id', 'expected_at', 'notes'])]
+#[Fillable(['shop_id', 'supplier_id', 'expected_at', 'notes'])]
 class PurchaseOrder extends Model
 {
     /** @use HasFactory<PurchaseOrderFactory> */
-    use Auditable, HasFactory;
+    use Auditable, BelongsToShop, HasFactory;
 
     protected function casts(): array
     {

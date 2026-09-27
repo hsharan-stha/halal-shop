@@ -58,6 +58,9 @@ Route::middleware('store')->group(function (): void {
     Route::get('/categories', [Shop\CategoryController::class, 'index'])->name('categories.index');
     Route::get('/categories/{category:slug}', [Shop\CategoryController::class, 'show'])->name('categories.show');
     Route::get('/brands/{brand:slug}', [Shop\BrandController::class, 'show'])->name('brands.show');
+    Route::get('/halal-shops', [Shop\HalalShopController::class, 'index'])->name('halal-shops.index');
+    Route::post('/halal-shops/location', [Shop\HalalShopController::class, 'location'])->middleware('throttle:forms')->name('halal-shops.location');
+    Route::get('/halal-shops/{shop}', [Shop\HalalShopController::class, 'show'])->name('halal-shops.show');
 
     Route::get('/cart', [Shop\CartController::class, 'index'])->name('cart.index');
     Route::post('/cart', [Shop\CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
@@ -100,7 +103,7 @@ Route::middleware('store')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function (): void {
+Route::middleware(['auth', 'staff', 'shop.tenant'])->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
     Route::post('/products/bulk', [Admin\ProductController::class, 'bulk'])->name('products.bulk');
@@ -138,6 +141,18 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/purchase-orders/{purchase_order}/receive', [Admin\PurchaseOrderController::class, 'receiveForm'])->name('purchase-orders.receive');
     Route::post('/purchase-orders/{purchase_order}/receive', [Admin\PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive.store');
     Route::resource('purchase-orders', Admin\PurchaseOrderController::class);
+
+    Route::get('/halal-shops', [Admin\HalalShopController::class, 'index'])->name('halal-shops.index');
+    Route::get('/halal-shops/create', [Admin\HalalShopController::class, 'create'])->name('halal-shops.create');
+    Route::post('/halal-shops', [Admin\HalalShopController::class, 'store'])->name('halal-shops.store');
+    Route::get('/halal-shops/{halal_shop}/edit', [Admin\HalalShopController::class, 'edit'])->name('halal-shops.edit');
+    Route::put('/halal-shops/{halal_shop}', [Admin\HalalShopController::class, 'update'])->name('halal-shops.update');
+    Route::delete('/halal-shops/{halal_shop}', [Admin\HalalShopController::class, 'destroy'])->name('halal-shops.destroy');
+    Route::get('/my-shop', [Admin\HalalShopController::class, 'editMine'])->name('my-shop.edit');
+    Route::put('/my-shop', [Admin\HalalShopController::class, 'updateMine'])->name('my-shop.update');
+
+    Route::get('/shop-sales', [Admin\ShopSalesController::class, 'index'])->name('shop-sales.index');
+    Route::put('/shop-sales/commission', [Admin\ShopSalesController::class, 'updateCommission'])->name('shop-sales.commission');
 
     Route::get('/orders', [Admin\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');

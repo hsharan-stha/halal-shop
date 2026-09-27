@@ -10,6 +10,7 @@ use App\Models\Brand;
 use App\Models\HalalCertification;
 use App\Models\Product;
 use App\Services\Catalog\HalalCertificationService;
+use App\Support\ShopAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -41,7 +42,7 @@ class HalalCertificationController extends Controller implements HasMiddleware
         $today = HalalCertification::today();
 
         $certifications = HalalCertification::query()
-            ->with(['brand:id,name,japanese_name'])
+            ->with(['brand:id,name,japanese_name', 'shop:id,name'])
             ->withCount('products')
             ->when($filters['q'] ?? null, fn ($query, string $q) => $query->where(fn ($inner) => $inner
                 ->where('certifying_body', 'like', '%'.$q.'%')
@@ -74,7 +75,10 @@ class HalalCertificationController extends Controller implements HasMiddleware
 
     public function store(HalalCertificationRequest $request, HalalCertificationService $service): RedirectResponse
     {
-        $certification = $service->save(new HalalCertification, $request->attributesForModel(), $request->productIds(), $request->file('file'));
+        $new = new HalalCertification;
+        $new->shop_id = ShopAccess::$tenantId;
+
+        $certification = $service->save($new, $request->attributesForModel(), $request->productIds(), $request->file('file'));
 
         return redirect()->route('admin.halal-certifications.show', $certification)->with('success', __('admin.halal.created'));
     }
@@ -91,11 +95,15 @@ class HalalCertificationController extends Controller implements HasMiddleware
 
     public function edit(HalalCertification $certification): View
     {
+        $this->authorizeShopOwnership($certification->shop_id);
+
         return view('admin.halal.form', $this->formData($certification, $certification->products()->pluck('products.id')->all()));
     }
 
     public function update(HalalCertificationRequest $request, HalalCertification $certification, HalalCertificationService $service): RedirectResponse
     {
+        $this->authorizeShopOwnership($certification->shop_id);
+
         $wasVerified = $certification->status === CertificationStatus::Verified;
         $service->save($certification, $request->attributesForModel(), $request->productIds(), $request->file('file'));
 
@@ -106,6 +114,8 @@ class HalalCertificationController extends Controller implements HasMiddleware
 
     public function destroy(HalalCertification $certification, HalalCertificationService $service): RedirectResponse
     {
+        $this->authorizeShopOwnership($certification->shop_id);
+
         $service->delete($certification);
 
         return redirect()->route('admin.halal-certifications.index')->with('success', __('admin.halal.deleted'));

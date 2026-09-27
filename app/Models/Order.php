@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryDestination;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -22,6 +23,8 @@ class Order extends Model
             'status' => OrderStatus::class,
             'payment_method' => PaymentMethod::class,
             'payment_status' => PaymentStatus::class,
+            'delivery_to' => DeliveryDestination::class,
+            'commission_amount' => 'integer',
             'items_total' => 'integer',
             'tax_total' => 'integer',
             'shipping_total' => 'integer',
@@ -40,6 +43,26 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id')->withTrashed();
+    }
+
+    /**
+     * The shop that fulfills this platform order and earns the sale.
+     *
+     * @return BelongsTo<Shop, $this>
+     */
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
+    }
+
+    /**
+     * Another registered shop receiving the parcel, when delivery is not to the customer.
+     *
+     * @return BelongsTo<Shop, $this>
+     */
+    public function pickupShop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class, 'pickup_shop_id');
     }
 
     /**

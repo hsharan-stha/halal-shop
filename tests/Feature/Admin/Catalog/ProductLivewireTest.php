@@ -28,7 +28,7 @@ class ProductLivewireTest extends TestCase
     public function test_variant_can_be_added_and_made_default(): void
     {
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductVariants::class, ['product' => $product])
             ->call('create')
@@ -51,7 +51,7 @@ class ProductLivewireTest extends TestCase
     public function test_variant_form_ids_do_not_collide_with_product_form(): void
     {
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductVariants::class, ['product' => $product])
             ->call('create')
@@ -62,7 +62,7 @@ class ProductLivewireTest extends TestCase
     public function test_default_variant_cannot_be_deleted(): void
     {
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductVariants::class, ['product' => $product])->call('delete', $product->defaultVariant->id);
 
@@ -73,7 +73,7 @@ class ProductLivewireTest extends TestCase
     {
         $product = Product::factory()->create();
         $other = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductVariants::class, ['product' => $product])
             ->call('edit', $other->defaultVariant->id)
@@ -89,7 +89,7 @@ class ProductLivewireTest extends TestCase
     public function test_variant_price_must_be_integer_yen(): void
     {
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductVariants::class, ['product' => $product])
             ->call('create')
@@ -101,7 +101,7 @@ class ProductLivewireTest extends TestCase
     public function test_viewer_cannot_change_variants(): void
     {
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::SupportAgent));
+        $this->actingAs($this->customer());
 
         Livewire::test(ProductVariants::class, ['product' => $product])->call('create')->assertForbidden();
     }
@@ -110,7 +110,7 @@ class ProductLivewireTest extends TestCase
     {
         Storage::fake(config('shop.media_disk'));
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         $component = Livewire::test(ProductImages::class, ['product' => $product])
             ->set('uploads', [UploadedFile::fake()->image('one.jpg', 800, 800), UploadedFile::fake()->image('two.png', 400, 300)])
@@ -138,7 +138,7 @@ class ProductLivewireTest extends TestCase
     {
         Storage::fake(config('shop.media_disk'));
         $product = Product::factory()->create();
-        $this->actingAs($this->staff(RoleSlug::ProductManager));
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin));
 
         Livewire::test(ProductImages::class, ['product' => $product])
             ->set('uploads', [UploadedFile::fake()->create('payload.svg', 5, 'image/svg+xml')])

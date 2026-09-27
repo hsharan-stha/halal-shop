@@ -52,6 +52,8 @@ class Navigation
      */
     public static function admin(?User $user): array
     {
+        $user?->loadMissing('roles');
+
         $sections = [
             ['heading' => 'admin.nav.overview', 'items' => [
                 ['label' => 'admin.nav.dashboard', 'route' => 'admin.dashboard', 'icon' => 'home', 'active' => 'admin.dashboard', 'can' => 'dashboard.view'],
@@ -59,6 +61,9 @@ class Navigation
             ]],
             ['heading' => 'admin.nav.sales', 'items' => [
                 ['label' => 'admin.nav.orders', 'route' => 'admin.orders.index', 'icon' => 'receipt', 'active' => 'admin.orders.*', 'can' => 'orders.view'],
+                ['label' => 'admin.nav.halal_shops', 'route' => 'admin.halal-shops.index', 'icon' => 'building', 'active' => 'admin.halal-shops.*', 'can' => 'shops.manage'],
+                ['label' => 'admin.nav.shop_sales', 'route' => 'admin.shop-sales.index', 'icon' => 'chart', 'active' => 'admin.shop-sales.*', 'can' => 'orders.view'],
+                ['label' => 'admin.nav.my_shop', 'route' => 'admin.my-shop.edit', 'icon' => 'map-pin', 'active' => 'admin.my-shop.*', 'role' => 'halal_shop'],
                 ['label' => 'admin.nav.refunds', 'route' => 'admin.refunds.index', 'icon' => 'banknotes', 'active' => 'admin.refunds.*', 'can' => 'orders.view'],
                 ['label' => 'admin.nav.customers', 'route' => 'admin.customers.index', 'icon' => 'users', 'active' => 'admin.customers.*', 'can' => 'customers.view'],
                 ['label' => 'admin.nav.coupons', 'route' => 'admin.coupons.index', 'icon' => 'ticket', 'active' => 'admin.coupons.*', 'can' => 'coupons.view'],
@@ -102,7 +107,8 @@ class Navigation
         foreach ($sections as $section) {
             $items = array_values(array_filter(
                 self::filter($section['items']),
-                fn (array $item) => ! isset($item['can']) || ($user && $user->can($item['can'])),
+                fn (array $item) => (! isset($item['can']) || ($user && $user->can($item['can'])))
+                    && (! isset($item['role']) || ($user && $user->hasRole($item['role']))),
             ));
 
             if ($items !== []) {

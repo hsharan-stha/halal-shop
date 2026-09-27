@@ -34,7 +34,7 @@ class OrderController extends Controller implements HasMiddleware
         ]);
 
         $orders = Order::query()
-            ->with('customer:id,name,email,deleted_at')
+            ->with(['customer:id,name,email,deleted_at', 'shop:id,name'])
             ->withCount('items')
             ->when($filters['q'] ?? null, function (Builder $query, string $term): void {
                 $query->where(function (Builder $query) use ($term): void {
@@ -58,7 +58,7 @@ class OrderController extends Controller implements HasMiddleware
 
     public function show(Order $order): View
     {
-        $order->load(['customer', 'items']);
+        $order->load(['customer', 'items', 'shop', 'pickupShop']);
 
         return view('admin.orders.show', ['order' => $order]);
     }

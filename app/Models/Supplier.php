@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToShop;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,10 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'company_name', 'code', 'contact_name', 'email', 'phone', 'postal_code', 'prefecture', 'address', 'country_code', 'notes', 'is_active'])]
+#[Fillable(['shop_id', 'name', 'company_name', 'code', 'contact_name', 'email', 'phone', 'postal_code', 'prefecture', 'address', 'country_code', 'notes', 'is_active'])]
 class Supplier extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, BelongsToShop, HasFactory, SoftDeletes;
 
     protected function casts(): array
     {

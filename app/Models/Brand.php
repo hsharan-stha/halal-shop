@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToShop;
 use App\Models\Concerns\HasTranslations;
 use App\Services\Media\ImageStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,10 +13,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'japanese_name', 'slug', 'description', 'country_of_origin', 'website_url', 'sort_order', 'is_active'])]
+#[Fillable(['shop_id', 'name', 'japanese_name', 'slug', 'description', 'country_of_origin', 'website_url', 'sort_order', 'is_active'])]
 class Brand extends Model
 {
-    use Auditable, HasFactory, HasTranslations, SoftDeletes;
+    use Auditable, BelongsToShop, HasFactory, HasTranslations, SoftDeletes;
 
     protected function casts(): array
     {

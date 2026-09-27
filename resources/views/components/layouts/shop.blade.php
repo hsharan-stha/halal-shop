@@ -71,6 +71,12 @@
 
             <nav class="ml-auto flex items-center gap-1" aria-label="{{ __('shop.nav.utility') }}">
                 <x-locale-switcher class="hidden sm:block" />
+                @if (Route::has('halal-shops.index'))
+                    <a href="{{ route('halal-shops.index') }}" class="btn btn-ghost btn-icon text-sm sm:w-auto sm:px-3" aria-label="{{ __('shop.halal_shops.title') }}" @if (request()->routeIs('halal-shops.*')) aria-current="page" @endif>
+                        <x-icon name="map-pin" class="sm:hidden" />
+                        <span class="hidden sm:inline">{{ __('shop.halal_shops.title') }}</span>
+                    </a>
+                @endif
 
                 @if (Route::has('search'))
                     <a href="{{ route('search') }}" class="btn btn-ghost btn-icon md:hidden" aria-label="{{ __('shop.nav.search') }}"><x-icon name="search" /></a>

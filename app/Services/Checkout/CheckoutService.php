@@ -2,12 +2,14 @@
 
 namespace App\Services\Checkout;
 
+use App\Enums\DeliveryDestination;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Exceptions\Checkout\CheckoutException;
 use App\Exceptions\Inventory\InventoryException;
 use App\Models\Order;
+use App\Models\Shop;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Facades\DB;
@@ -46,22 +48,60 @@ class CheckoutService
     /**
      * @param  array{recipient_name: string, phone: string, postal_code: string, prefecture: string, city: string, ward?: ?string, town: string, street: string, building?: ?string, room?: ?string}  $address
      */
-    public function place(User $user, array $address, PaymentMethod $method, ?string $note): Order
+    public function place(User $user, array $address, PaymentMethod $method, ?string $note, DeliveryDestination $delivery = DeliveryDestination::Customer, ?int $pickupShopId = null): Order
     {
         if (! in_array($method, $this->availableMethods(), true)) {
             throw CheckoutException::paymentUnavailable();
         }
 
-        return DB::transaction(function () use ($user, $address, $method, $note): Order {
+        return DB::transaction(function () use ($user, $address, $method, $note, $delivery, $pickupShopId): Order {
             $quote = $this->pricing->quote($this->cart->quantities(), $method, strict: true);
 
             if ($quote['lines'] === []) {
                 throw CheckoutException::empty();
             }
 
+            $shopIds = collect($quote['lines'])
+                ->map(fn (array $line) => (int) $line['variant']->product->shop_id)
+                ->unique()
+                ->filter();
+
+            if ($shopIds->count() !== 1) {
+                throw CheckoutException::mixedShops();
+            }
+
+            $pickupShopId = $delivery === DeliveryDestination::Shop ? $pickupShopId : null;
+
+            if ($delivery === DeliveryDestination::Shop) {
+                $pickup = Shop::query()->active()->find($pickupShopId);
+
+                if ($pickup === null || $pickup->postal_code === null) {
+                    throw CheckoutException::pickupUnavailable();
+                }
+
+                $address = [
+                    'recipient_name' => $address['recipient_name'],
+                    'phone' => $address['phone'],
+                    'postal_code' => $pickup->postal_code,
+                    'prefecture' => $pickup->prefecture,
+                    'city' => $pickup->city,
+                    'ward' => null,
+                    'town' => $pickup->town,
+                    'street' => $pickup->street,
+                    'building' => $pickup->building,
+                    'room' => null,
+                ];
+            }
+
+            $percent = max(0, min(100, (int) settings('marketplace.commission_percent', 10)));
+
             $order = new Order;
             $order->forceFill([
                 'user_id' => $user->id,
+                'shop_id' => $shopIds->first(),
+                'pickup_shop_id' => $pickupShopId,
+                'delivery_to' => $delivery,
+                'commission_amount' => (int) floor($quote['items_total'] * $percent / 100),
                 'order_number' => 'TMP-'.str_replace('.', '', uniqid('', true)),
                 'status' => $method === PaymentMethod::BankTransfer ? OrderStatus::Pending : OrderStatus::Confirmed,
                 'payment_method' => $method,

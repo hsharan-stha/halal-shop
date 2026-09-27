@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BrandRequest;
 use App\Models\Brand;
 use App\Services\Media\ImageStorage;
+use App\Support\ShopAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -27,6 +28,7 @@ class BrandController extends Controller implements HasMiddleware
         $search = trim((string) $request->string('q'));
 
         $brands = Brand::query()
+            ->with('shop:id,name')
             ->withCount('products')
             ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('name', 'like', '%'.$search.'%')
@@ -47,6 +49,7 @@ class BrandController extends Controller implements HasMiddleware
     public function store(BrandRequest $request, ImageStorage $images): RedirectResponse
     {
         $brand = new Brand($request->attributesForModel());
+        $brand->shop_id = ShopAccess::$tenantId;
 
         if ($request->hasFile('logo')) {
             $brand->logo_path = $images->store($request->file('logo'), 'brands', 800)['path'];
@@ -59,11 +62,15 @@ class BrandController extends Controller implements HasMiddleware
 
     public function edit(Brand $brand): View
     {
+        $this->authorizeShopOwnership($brand->shop_id);
+
         return view('admin.brands.form', ['brand' => $brand]);
     }
 
     public function update(BrandRequest $request, Brand $brand, ImageStorage $images): RedirectResponse
     {
+        $this->authorizeShopOwnership($brand->shop_id);
+
         $brand->fill($request->attributesForModel());
         $previous = $brand->logo_path;
 
@@ -84,6 +91,8 @@ class BrandController extends Controller implements HasMiddleware
 
     public function destroy(Brand $brand): RedirectResponse
     {
+        $this->authorizeShopOwnership($brand->shop_id);
+
         if ($brand->products()->exists()) {
             return back()->with('error', __('admin.brands.has_products'));
         }

@@ -41,6 +41,7 @@
                 <tr>
                     <td>
                         <a href="{{ route('admin.purchase-orders.show', $order) }}" class="font-mono text-sm font-medium hover:text-primary">{{ $order->reference() }}</a>
+                        <x-admin.owner-badge :row="$order" :platform="false" />
                         <p class="text-xs text-ink-muted">{{ local_date($order->created_at) }} · {{ trans_choice('admin.purchase_orders.line_count', $order->items_count, ['count' => $order->items_count]) }}</p>
                     </td>
                     <td class="text-sm">{{ $order->supplier?->name ?? '—' }}</td>

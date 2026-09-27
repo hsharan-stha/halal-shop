@@ -28,7 +28,7 @@ abstract class TestCase extends BaseTestCase
         return User::factory()->customer()->create($attributes);
     }
 
-    protected function staff(RoleSlug $role = RoleSlug::Admin, array $attributes = []): User
+    protected function staff(RoleSlug $role = RoleSlug::SuperAdmin, array $attributes = []): User
     {
         return User::factory()->withRole($role)->create($attributes);
     }

@@ -2,11 +2,14 @@
     <x-ui.page-header :title="$certification->certifying_body" :description="'#'.$certification->certificate_number" :back="route('admin.halal-certifications.index')">
         <x-slot:actions>
             <x-ui.badge :color="$certification->status->color()">{{ $certification->status->label() }}</x-ui.badge>
+            <x-admin.owner-badge :row="$certification" />
             @can('halal_certificates.manage')
-                <x-ui.button variant="secondary" size="sm" icon="pencil" :href="route('admin.halal-certifications.edit', $certification)">{{ __('admin.edit') }}</x-ui.button>
-                <x-ui.confirm-form :action="route('admin.halal-certifications.destroy', $certification)" method="DELETE" :message="__('admin.halal.confirm_delete')">
-                    <x-ui.button variant="ghost" size="sm" icon="trash" class="text-danger">{{ __('admin.delete') }}</x-ui.button>
-                </x-ui.confirm-form>
+                @if ($certification->isManageableByCurrentUser())
+                    <x-ui.button variant="secondary" size="sm" icon="pencil" :href="route('admin.halal-certifications.edit', $certification)">{{ __('admin.edit') }}</x-ui.button>
+                    <x-ui.confirm-form :action="route('admin.halal-certifications.destroy', $certification)" method="DELETE" :message="__('admin.halal.confirm_delete')">
+                        <x-ui.button variant="ghost" size="sm" icon="trash" class="text-danger">{{ __('admin.delete') }}</x-ui.button>
+                    </x-ui.confirm-form>
+                @endif
             @endcan
         </x-slot:actions>
     </x-ui.page-header>

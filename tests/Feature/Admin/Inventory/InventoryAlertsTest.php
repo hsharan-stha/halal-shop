@@ -33,8 +33,8 @@ class InventoryAlertsTest extends TestCase
 
     public function test_each_expiry_threshold_is_reported_once_per_batch(): void
     {
-        $manager = $this->staff(RoleSlug::InventoryManager);
-        $support = $this->staff(RoleSlug::SupportAgent);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
+        $support = $this->customer();
         $batch = $this->receive($this->item(), 20, '2026-06-25');
         Notification::fake();
 
@@ -54,7 +54,7 @@ class InventoryAlertsTest extends TestCase
 
     public function test_daily_check_stops_sales_of_expired_batches_and_reports_them(): void
     {
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
         $item = $this->item();
         $batch = $this->receive($item, 5, '2026-06-20');
         $batch->forceFill(['expires_at' => '2026-06-13', 'last_alert_days' => 3])->save();
@@ -69,7 +69,7 @@ class InventoryAlertsTest extends TestCase
 
     public function test_low_stock_is_reported_once_until_the_item_is_restocked(): void
     {
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
         $item = $this->item();
         $batch = $this->receive($item, 2, '2026-12-01');
         Notification::fake();
@@ -89,7 +89,7 @@ class InventoryAlertsTest extends TestCase
 
     public function test_draft_products_do_not_raise_low_stock_alerts(): void
     {
-        $this->staff(RoleSlug::InventoryManager);
+        $this->staff(RoleSlug::SuperAdmin);
         Product::factory()->draft()->create();
         Notification::fake();
 
@@ -112,7 +112,7 @@ class InventoryAlertsTest extends TestCase
 
     public function test_disabled_alert_types_are_not_sent(): void
     {
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
         app(SettingsService::class)->set('notifications', 'expiry_alerts', false);
         app(SettingsService::class)->set('notifications', 'low_stock_alerts', false);
         $batch = $this->receive($this->item(), 1, '2026-06-18');

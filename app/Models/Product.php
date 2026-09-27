@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'category_id', 'brand_id', 'supplier_id', 'tax_class_id', 'sku', 'slug', 'name', 'japanese_name',
+    'shop_id', 'category_id', 'brand_id', 'supplier_id', 'tax_class_id', 'sku', 'slug', 'name', 'japanese_name',
     'short_description', 'description', 'status', 'is_featured', 'published_at', 'halal_status', 'halal_notes',
     'ingredients', 'allergens', 'nutrition', 'storage_instructions', 'storage_type', 'country_of_origin',
     'manufacturer', 'importer', 'net_content', 'min_order_quantity', 'max_order_quantity', 'meta_title', 'meta_description',
@@ -75,6 +75,16 @@ class Product extends Model
         static::forceDeleting(function (Product $product): void {
             $product->images()->get()->each->delete();
         });
+    }
+
+    /**
+     * The halal shop that sells this product.
+     *
+     * @return BelongsTo<Shop, $this>
+     */
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
     }
 
     /**
@@ -150,14 +160,15 @@ class Product extends Model
     }
 
     /**
-     * Active and published (publication date reached).
+     * Active, published (publication date reached) and sold by an open shop.
      *
      * @param  Builder<Product>  $query
      */
     public function scopePublished(Builder $query): void
     {
         $query->where('status', ProductStatus::Active)
-            ->where(fn (Builder $inner) => $inner->whereNull('published_at')->orWhere('published_at', '<=', now()));
+            ->where(fn (Builder $inner) => $inner->whereNull('published_at')->orWhere('published_at', '<=', now()))
+            ->whereHas('shop', fn (Builder $shops) => $shops->where('is_active', true));
     }
 
     /**
@@ -276,6 +287,7 @@ class Product extends Model
             ->with([
                 'brand:id,name,japanese_name,slug,deleted_at',
                 'category:id,name,japanese_name,slug',
+                'shop:id,name,slug,prefecture,city,latitude,longitude,is_active',
                 'cover',
                 'halalCertifications',
             ]);

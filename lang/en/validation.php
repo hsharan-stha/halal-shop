@@ -182,6 +182,7 @@ return [
 
     'japanese_phone' => 'Please enter a valid Japanese phone number (e.g. 090-1234-5678).',
     'japanese_postal_code' => 'Please enter a valid 7-digit postal code (e.g. 123-4567).',
+    'variant_not_in_shop' => 'Choose a product that belongs to this shop.',
 
     'custom' => [],
 

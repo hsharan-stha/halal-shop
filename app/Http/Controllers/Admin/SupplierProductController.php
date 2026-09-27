@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PurchaseOrderRequest;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
+use App\Rules\VariantInOwnShop;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -26,7 +27,7 @@ class SupplierProductController extends Controller implements HasMiddleware
     public function store(Request $request, Supplier $supplier): RedirectResponse
     {
         $data = $request->validate([
-            'product_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')],
+            'product_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at'), new VariantInOwnShop],
             'supplier_sku' => ['nullable', 'string', 'max:64'],
             'unit_cost' => ['nullable', 'integer', 'min:0', 'max:'.PurchaseOrderRequest::MAX_UNIT_COST],
             'lead_time_days' => ['nullable', 'integer', 'min:0', 'max:365'],

@@ -38,11 +38,11 @@ class AdminAccessTest extends TestCase
     {
         return [
             'super admin sees settings' => [RoleSlug::SuperAdmin, 'admin.settings.edit', 200],
-            'admin sees audit log' => [RoleSlug::Admin, 'admin.audit-logs.index', 200],
-            'support agent cannot see settings' => [RoleSlug::SupportAgent, 'admin.settings.edit', 403],
-            'content manager cannot see staff' => [RoleSlug::ContentManager, 'admin.staff.index', 403],
-            'inventory manager cannot see system health' => [RoleSlug::InventoryManager, 'admin.system.health', 403],
-            'order manager sees dashboard' => [RoleSlug::OrderManager, 'admin.dashboard', 200],
+            'super admin sees audit log' => [RoleSlug::SuperAdmin, 'admin.audit-logs.index', 200],
+            'halal shop cannot see settings' => [RoleSlug::HalalShop, 'admin.settings.edit', 403],
+            'halal shop cannot see staff' => [RoleSlug::HalalShop, 'admin.staff.index', 403],
+            'halal shop cannot see system health' => [RoleSlug::HalalShop, 'admin.system.health', 403],
+            'halal shop sees dashboard' => [RoleSlug::HalalShop, 'admin.dashboard', 200],
         ];
     }
 

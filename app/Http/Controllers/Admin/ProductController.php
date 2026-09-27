@@ -11,9 +11,11 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\HalalCertification;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\Supplier;
 use App\Models\TaxClass;
 use App\Services\Catalog\ProductService;
+use App\Support\ShopAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -46,7 +48,7 @@ class ProductController extends Controller implements HasMiddleware
         ]);
 
         $products = Product::query()
-            ->with(['category:id,name,japanese_name', 'brand:id,name,japanese_name', 'images', 'variants', 'halalCertifications'])
+            ->with(['shop:id,name', 'category:id,name,japanese_name', 'brand:id,name,japanese_name', 'images', 'variants', 'halalCertifications'])
             ->when($filters['q'] ?? null, fn ($query, string $q) => $query->where(fn ($inner) => $inner
                 ->where('name', 'like', '%'.$q.'%')
                 ->orWhere('japanese_name', 'like', '%'.$q.'%')
@@ -90,6 +92,7 @@ class ProductController extends Controller implements HasMiddleware
     {
         $attributes = $request->productAttributes();
         $attributes['slug'] ??= $service->uniqueSlug($attributes['name']);
+        $attributes['shop_id'] = $this->shopIdFor($request);
 
         $product = $service->create($attributes, $request->variantAttributes(), $request->certificationIds(), $request->user(), $request->boolean('food_label_reviewed'));
 
@@ -181,6 +184,26 @@ class ProductController extends Controller implements HasMiddleware
             'suppliers' => Supplier::query()->orderBy('name')->pluck('name', 'id')->all(),
             'taxClasses' => TaxClass::query()->with('rates')->orderBy('id')->get()->mapWithKeys(fn (TaxClass $class) => [$class->id => $class->label()])->all(),
             'certifications' => $certifications,
+            'shops' => ShopAccess::id(auth()->user()) === null
+                ? Shop::query()->orderBy('name')->pluck('name', 'id')->all()
+                : null,
         ];
+    }
+
+    private function shopIdFor(Request $request): int
+    {
+        $own = ShopAccess::id($request->user());
+
+        if ($own !== null) {
+            abort_if($own === 0, 403);
+
+            return $own;
+        }
+
+        $shopId = (int) $request->validate([
+            'shop_id' => ['required', 'integer', 'exists:shops,id'],
+        ])['shop_id'];
+
+        return $shopId;
     }
 }

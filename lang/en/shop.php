@@ -333,6 +333,17 @@ return [
         'count' => ':count item|:count items',
     ],
 
+    'halal_shops' => [
+        'title' => 'Halal shops',
+        'description' => 'Shops nearest to you are listed first after you share your location.',
+        'search' => 'Search by shop name',
+        'use_location' => 'Use my location',
+        'empty' => 'No shops match.',
+        'all_items' => 'All items from this shop',
+        'sold_by' => 'Sold by',
+        'also_at' => 'Also available at other shops',
+    ],
+
     'checkout' => [
         'title' => 'Checkout',
         'place' => 'Place order',
@@ -349,6 +360,10 @@ return [
         'building' => 'Building',
         'room' => 'Room',
         'address' => 'Delivery address',
+        'delivery' => 'Where to deliver',
+        'fulfilled_by' => 'Fulfilled by :shop',
+        'delivery_customer' => 'Deliver to the customer',
+        'delivery_shop' => 'Deliver to a halal shop',
         'pay_later' => 'This order is unpaid. We will not treat it as paid until the shop confirms the payment.',
         'bank_instructions' => 'Bank transfer details',
         'cod_notice' => 'Pay the courier when the parcel is delivered. A cash-on-delivery fee is included.',
@@ -359,6 +374,8 @@ return [
             'payment' => 'That payment method is not available for this order.',
             'not_cancellable' => 'This order can no longer be cancelled.',
             'invalid_state' => 'That action is not available for this order.',
+            'mixed_shops' => 'Your cart has items from more than one shop. Order one shop at a time.',
+            'pickup' => 'That shop cannot receive a delivery.',
         ],
     ],
 

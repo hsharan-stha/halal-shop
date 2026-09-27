@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Shop;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -139,6 +140,10 @@ class StorefrontCatalog
             $query->whereIn('category_id', $category ? $category->descendantAndSelfIds() : []);
         }
 
+        if (filled($filters['shop'] ?? null)) {
+            $query->whereHas('shop', fn (Builder $shops) => $shops->active()->where('slug', $filters['shop']));
+        }
+
         if ($brandId !== null) {
             $query->where('brand_id', $brandId);
         } elseif (filled($filters['brand'] ?? null)) {
@@ -153,7 +158,8 @@ class StorefrontCatalog
                 ->orWhere('sku', 'like', $like)
                 ->orWhereHas('variants', fn (Builder $variants) => $variants->where('sku', 'like', $like)->orWhere('barcode', 'like', $like))
                 ->orWhereHas('brand', fn (Builder $brands) => $brands->where('name', 'like', $like)->orWhere('japanese_name', 'like', $like))
-                ->orWhereHas('category', fn (Builder $categories) => $categories->where('name', 'like', $like)->orWhere('japanese_name', 'like', $like)));
+                ->orWhereHas('category', fn (Builder $categories) => $categories->where('name', 'like', $like)->orWhere('japanese_name', 'like', $like))
+                ->orWhereHas('shop', fn (Builder $shops) => $shops->where('name', 'like', $like)));
         }
 
         if (filled($filters['halal'] ?? null)) {
@@ -215,7 +221,76 @@ class StorefrontCatalog
             'price_asc' => $query->orderBy($price)->orderBy('products.id'),
             'price_desc' => $query->orderByDesc($price)->orderByDesc('products.id'),
             'name' => $query->orderByRaw(app()->getLocale() === 'ja' ? 'coalesce(products.japanese_name, products.name)' : 'products.name'),
+            'nearest' => $this->orderByNearest($query),
             default => $query->latest('published_at')->latest('products.id'),
         };
+    }
+
+    /**
+     * Other shops selling a product with the same name, nearest first when the customer shared a location.
+     *
+     * @return Collection<int, Product>
+     */
+    public function sameItemAtOtherShops(Product $product): Collection
+    {
+        $query = Product::query()->published()->withStorefront()
+            ->where('products.id', '!=', $product->id)
+            ->where(fn (Builder $inner) => $inner
+                ->where('name', $product->name)
+                ->orWhere('japanese_name', $product->japanese_name));
+
+        $this->orderByNearest($query);
+
+        return $query->limit(6)->get();
+    }
+
+    /**
+     * Active shops, nearest first when a customer location is stored.
+     *
+     * @return Collection<int, Shop>
+     */
+    public function shops(?string $term = null): Collection
+    {
+        $like = $term === null || $term === '' ? null : '%'.addcslashes($term, '%_\\').'%';
+        $latitude = session('customer_latitude');
+        $longitude = session('customer_longitude');
+
+        $shops = Shop::query()->active()
+            ->when($like, fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
+                ->where('name', 'like', $like)
+                ->orWhere('city', 'like', $like)
+                ->orWhere('prefecture', 'like', $like)))
+            ->get();
+
+        if (! is_numeric($latitude) || ! is_numeric($longitude)) {
+            return $shops->sortBy('name')->values();
+        }
+
+        return $shops->sortBy(fn (Shop $shop) => $shop->distanceKm((float) $latitude, (float) $longitude))->values();
+    }
+
+    /**
+     * @param  Builder<Product>  $query
+     */
+    private function orderByNearest(Builder $query): void
+    {
+        $latitude = session('customer_latitude');
+        $longitude = session('customer_longitude');
+
+        if (! is_numeric($latitude) || ! is_numeric($longitude)) {
+            $query->latest('published_at')->latest('products.id');
+
+            return;
+        }
+
+        $latitude = (float) $latitude;
+        $longitude = (float) $longitude;
+
+        $query->leftJoin('shops as distance_shops', 'distance_shops.id', '=', 'products.shop_id')
+            ->orderByRaw(
+                '(distance_shops.latitude - ?) * (distance_shops.latitude - ?) + (distance_shops.longitude - ?) * (distance_shops.longitude - ?)',
+                [$latitude, $latitude, $longitude, $longitude],
+            )
+            ->orderBy('products.id');
     }
 }

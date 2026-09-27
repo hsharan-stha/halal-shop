@@ -48,6 +48,14 @@
             </x-ui.card>
         </div>
         <div class="min-w-0 space-y-6">
+            <x-ui.card :title="__('admin.halal_shops.name')">
+                <p class="font-medium">{{ $order->shop?->name ?? '—' }}</p>
+                <p class="mt-1 text-sm text-ink-muted">{{ $order->delivery_to?->label() }}</p>
+                @if ($order->pickupShop)
+                    <p class="text-sm">{{ $order->pickupShop->name }}</p>
+                @endif
+                <p class="mt-2 text-sm">{{ __('admin.halal_shops.commission_amount') }} {{ money($order->commission_amount) }}</p>
+            </x-ui.card>
             <x-ui.card :title="__('admin.orders.customer')">
                 <p class="font-medium">{{ $order->customer?->name ?? __('admin.orders.deleted_customer') }}</p>
                 <p class="text-sm text-ink-muted">{{ $order->customer?->email }}</p>

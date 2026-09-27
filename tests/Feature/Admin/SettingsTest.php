@@ -17,7 +17,7 @@ class SettingsTest extends TestCase
     public function test_admin_can_update_branding_and_it_is_applied_and_audited(): void
     {
         Storage::fake('public');
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($admin)->put(route('admin.settings.update', 'branding'), [
             'application_name' => 'Barakah Mart',
@@ -64,7 +64,7 @@ class SettingsTest extends TestCase
 
     public function test_user_without_update_permission_cannot_change_settings(): void
     {
-        $this->actingAs($this->staff(RoleSlug::SupportAgent))
+        $this->actingAs($this->staff(RoleSlug::HalalShop))
             ->put(route('admin.settings.update', 'maintenance'), ['enabled' => '1'])
             ->assertForbidden();
 

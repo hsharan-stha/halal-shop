@@ -7,6 +7,7 @@ use App\Enums\PurchaseOrderStatus;
 use App\Enums\RoleSlug;
 use App\Models\InventoryBatch;
 use App\Models\InventoryMovement;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -29,13 +30,13 @@ class PurchaseOrderTest extends TestCase
 
         $this->seed(TaxSeeder::class);
         $this->travelTo(CarbonImmutable::parse('2026-06-15 10:00', 'Asia/Tokyo'));
-        $this->manager = $this->staff(RoleSlug::InventoryManager);
+        $this->manager = $this->staff(RoleSlug::SuperAdmin);
     }
 
     public function test_draft_totals_are_calculated_on_the_server(): void
     {
         $supplier = Supplier::factory()->create();
-        [$first, $second] = ProductVariant::factory()->count(2)->create();
+        [$first, $second] = ProductVariant::factory()->count(2)->create(['product_id' => Product::factory()->create()->id]);
 
         $this->actingAs($this->manager)
             ->post(route('admin.purchase-orders.store'), [
@@ -192,12 +193,13 @@ class PurchaseOrderTest extends TestCase
         $this->actingAs($this->manager)->get(route('admin.purchase-orders.receive', $ordered))->assertOk()->assertSee('lines['.$ordered->items->first()->id.'][expires_at]', false);
     }
 
-    public function test_staff_without_purchasing_permission_are_refused(): void
+    public function test_a_customer_cannot_use_purchasing(): void
     {
         $order = $this->ordered([3]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))->get(route('admin.purchase-orders.index'))->assertForbidden();
-        $this->actingAs($this->staff(RoleSlug::OrderManager))->post(route('admin.purchase-orders.cancel', $order))->assertForbidden();
+        $customer = $this->customer();
+        $this->actingAs($customer)->get(route('admin.purchase-orders.index'))->assertForbidden();
+        $this->actingAs($customer)->post(route('admin.purchase-orders.cancel', $order))->assertForbidden();
 
         $this->assertSame(PurchaseOrderStatus::Ordered, $order->fresh()->status);
     }
@@ -207,10 +209,20 @@ class PurchaseOrderTest extends TestCase
      */
     private function order(array $quantities): PurchaseOrder
     {
-        $lines = array_map(fn (int $quantity) => ['product_variant_id' => ProductVariant::factory()->create()->id, 'quantity' => $quantity, 'unit_cost' => 200], $quantities);
+        $product = Product::factory()->create();
+        $lines = array_map(fn (int $quantity) => [
+            'product_variant_id' => ProductVariant::factory()->create(['product_id' => $product->id])->id,
+            'quantity' => $quantity,
+            'unit_cost' => 200,
+        ], $quantities);
 
         return app(PurchaseOrderService::class)
-            ->save(new PurchaseOrder, ['supplier_id' => Supplier::factory()->create()->id, 'expected_at' => '2026-06-25', 'notes' => null], $lines, $this->manager)
+            ->save(
+                new PurchaseOrder(['shop_id' => $product->shop_id]),
+                ['supplier_id' => Supplier::factory()->create()->id, 'expected_at' => '2026-06-25', 'notes' => null],
+                $lines,
+                $this->manager,
+            )
             ->load('items');
     }
 

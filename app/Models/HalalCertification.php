@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CertificationStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToShop;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,10 +14,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
-#[Fillable(['brand_id', 'certifying_body', 'certificate_number', 'scope', 'issued_at', 'expires_at', 'notes'])]
+#[Fillable(['shop_id', 'brand_id', 'certifying_body', 'certificate_number', 'scope', 'issued_at', 'expires_at', 'notes'])]
 class HalalCertification extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, BelongsToShop, HasFactory, SoftDeletes;
 
     /**
      * @var list<string>

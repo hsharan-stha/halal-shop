@@ -35,7 +35,7 @@ class InventoryAdminTest extends TestCase
         $batch = $this->receive($item, 8, '2026-06-20');
         $this->receive($item, 4, '2026-12-01', ['status' => BatchStatus::Quarantined]);
         $untracked = InventoryItem::factory()->untracked(3)->create();
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)->get(route('admin.inventory.index'))
             ->assertOk()
@@ -64,36 +64,31 @@ class InventoryAdminTest extends TestCase
     {
         $item = $this->item();
 
-        $this->actingAs($this->staff(RoleSlug::SupportAgent))
+        $this->actingAs($this->customer())
             ->get(route('admin.inventory.index'))
             ->assertForbidden();
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->customer())
             ->post(route('admin.inventory.receive.store', $item), ['quantity' => 5, 'expires_at' => '2026-09-01'])
             ->assertForbidden();
 
         $this->assertSame(0, $item->fresh()->quantity_on_hand);
     }
 
-    public function test_view_only_staff_do_not_see_stock_actions(): void
+    public function test_a_customer_cannot_view_stock(): void
     {
         $item = $this->item();
         $batch = $this->receive($item, 5, '2026-09-01');
-        $viewer = $this->staff(RoleSlug::ProductManager);
 
-        $this->actingAs($viewer)->get(route('admin.inventory.show', $item))
-            ->assertOk()
-            ->assertDontSee(route('admin.inventory.receive', $item));
-        $this->actingAs($viewer)->get(route('admin.batches.show', $batch))
-            ->assertOk()
-            ->assertDontSee(route('admin.batches.dispose', $batch));
-        $this->actingAs($viewer)->post(route('admin.batches.dispose', $batch), ['quantity' => 1, 'type' => 'damage', 'reason' => 'x'])
+        $this->actingAs($this->customer())->get(route('admin.inventory.show', $item))->assertForbidden();
+        $this->actingAs($this->customer())->get(route('admin.batches.show', $batch))->assertForbidden();
+        $this->actingAs($this->customer())->post(route('admin.batches.dispose', $batch), ['quantity' => 1, 'type' => 'damage', 'reason' => 'x'])
             ->assertForbidden();
     }
 
     public function test_receiving_stock_creates_a_batch_and_a_movement(): void
     {
         $item = $this->item();
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)
             ->post(route('admin.inventory.receive.store', $item), [
@@ -118,7 +113,7 @@ class InventoryAdminTest extends TestCase
     public function test_receiving_tracked_stock_requires_a_future_expiry_date(): void
     {
         $item = $this->item();
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)
             ->post(route('admin.inventory.receive.store', $item), ['quantity' => 5])
@@ -137,7 +132,7 @@ class InventoryAdminTest extends TestCase
     {
         $item = $this->item();
         $batch = $this->receive($item, 5, '2026-09-01');
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)
             ->post(route('admin.batches.status', $batch), ['status' => 'quarantined'])
@@ -155,7 +150,7 @@ class InventoryAdminTest extends TestCase
     {
         $item = $this->item();
         $batch = $this->receive($item, 5, '2026-09-01');
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)
             ->post(route('admin.batches.dispose', $batch), ['quantity' => 6, 'type' => 'damage', 'reason' => 'Dropped'])
@@ -176,7 +171,7 @@ class InventoryAdminTest extends TestCase
         $item = $this->item();
         $batch = $this->receive($item, 10, '2026-09-01');
 
-        $response = $this->actingAs($this->staff(RoleSlug::InventoryManager))
+        $response = $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.batches.transfer', $batch), ['quantity' => 3, 'location' => 'Packing area']);
 
         $moved = InventoryBatch::query()->whereKeyNot($batch->id)->sole();
@@ -188,7 +183,7 @@ class InventoryAdminTest extends TestCase
     public function test_untracked_stock_is_adjusted_directly_but_never_below_zero(): void
     {
         $item = InventoryItem::factory()->untracked(2)->create();
-        $manager = $this->staff(RoleSlug::InventoryManager);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($manager)
             ->post(route('admin.inventory.adjust', $item), ['delta' => -3, 'reason' => 'Count'])
@@ -205,7 +200,7 @@ class InventoryAdminTest extends TestCase
         $item = $this->item();
         $this->receive($item, 1, '2026-09-01');
 
-        $this->actingAs($this->staff(RoleSlug::InventoryManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->put(route('admin.inventory.update', $item), ['low_stock_threshold' => 8, 'track_batches' => '0'])
             ->assertSessionHas('error', __('admin.inventory.errors.tracking_locked'));
 
@@ -217,7 +212,7 @@ class InventoryAdminTest extends TestCase
         $item = $this->item();
         $this->receive($item, 8, '2026-09-01');
 
-        $this->actingAs($this->staff(RoleSlug::InventoryManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->put(route('admin.inventory.update', $item), ['low_stock_threshold' => 10, 'track_batches' => '1'])
             ->assertSessionHas('success');
 

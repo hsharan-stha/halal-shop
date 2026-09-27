@@ -23,7 +23,7 @@ class SupplierManagementTest extends TestCase
         parent::setUp();
 
         $this->seed(TaxSeeder::class);
-        $this->manager = $this->staff(RoleSlug::InventoryManager);
+        $this->manager = $this->staff(RoleSlug::SuperAdmin);
     }
 
     public function test_domestic_supplier_contact_details_are_normalised(): void
@@ -127,11 +127,11 @@ class SupplierManagementTest extends TestCase
         $this->actingAs($this->manager)->get(route('admin.suppliers.show', $supplier))->assertOk()->assertSee('Demo Wholesale K.K.')->assertSee(__('admin.suppliers.preferred'));
     }
 
-    public function test_view_only_staff_cannot_change_suppliers(): void
+    public function test_a_customer_cannot_change_suppliers(): void
     {
-        $viewer = $this->staff(RoleSlug::ProductManager);
+        $viewer = $this->customer();
 
-        $this->actingAs($viewer)->get(route('admin.suppliers.index'))->assertOk()->assertDontSee(route('admin.suppliers.create'));
+        $this->actingAs($viewer)->get(route('admin.suppliers.index'))->assertForbidden();
         $this->actingAs($viewer)->post(route('admin.suppliers.store'), ['name' => 'Sneaky', 'country_code' => 'JP'])->assertForbidden();
 
         $this->assertFalse(Supplier::query()->exists());

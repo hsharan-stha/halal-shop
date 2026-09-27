@@ -32,6 +32,7 @@ class ProductController extends Controller
     {
         $product = Product::query()->published()
             ->with([
+                'shop',
                 'brand',
                 'category.parent',
                 'images',
@@ -55,6 +56,7 @@ class ProductController extends Controller
                 : collect(),
             'recent' => $recentlyViewed->products($product->id),
             'wishlistIds' => $wishlist->ids(),
+            'otherShops' => $catalog->sameItemAtOtherShops($product),
         ]);
     }
 }

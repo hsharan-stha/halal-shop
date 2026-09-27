@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Shop;
 
+use App\Enums\DeliveryDestination;
 use App\Enums\PaymentMethod;
 use App\Exceptions\Checkout\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Shop\CheckoutRequest;
+use App\Models\Shop;
 use App\Services\Checkout\CartService;
 use App\Services\Checkout\CheckoutService;
 use App\Services\Checkout\PricingService;
@@ -29,10 +31,18 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', __('shop.checkout.errors.unavailable'));
         }
 
+        $shopIds = collect($quote['lines'])->map(fn (array $line) => (int) $line['variant']->product->shop_id)->unique()->filter();
+
+        if ($shopIds->count() !== 1) {
+            return redirect()->route('cart.index')->with('error', __('shop.checkout.errors.mixed_shops'));
+        }
+
         return view('shop.checkout.create', [
             'quote' => $quote,
             'methods' => $checkout->availableMethods(),
             'address' => $request->user()->addresses()->where('is_default', true)->first(),
+            'fulfillingShop' => Shop::query()->find($shopIds->first()),
+            'shops' => Shop::query()->active()->orderBy('name')->get(),
         ]);
     }
 
@@ -44,6 +54,8 @@ class CheckoutController extends Controller
                 $request->address(),
                 $request->enum('payment_method', PaymentMethod::class),
                 $request->validated('customer_note'),
+                $request->enum('delivery_to', DeliveryDestination::class) ?? DeliveryDestination::Customer,
+                $request->integer('pickup_shop_id') ?: null,
             );
         } catch (CheckoutException $exception) {
             return back()->withInput()->with('error', $exception->getMessage());

@@ -84,6 +84,20 @@
                     <p class="text-sm text-ink-muted">{{ $product->brand->localizedName() }}</p>
                 @endif
                 <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{{ $product->localizedName() }}</h1>
+                @if ($product->shop)
+                    <p class="mt-1 text-sm"><span class="text-ink-muted">{{ __('shop.halal_shops.sold_by') }}</span> <a href="{{ route('halal-shops.show', $product->shop) }}" class="font-medium text-primary">{{ $product->shop->name }}</a></p>
+                @endif
+
+                @if ($otherShops->isNotEmpty())
+                    <div class="mt-3 text-sm">
+                        <p class="font-medium">{{ __('shop.halal_shops.also_at') }}</p>
+                        <ul class="mt-1 space-y-1">
+                            @foreach ($otherShops as $other)
+                                <li><a href="{{ route('products.show', $other->slug) }}" class="text-primary">{{ $other->shop?->name }} · {{ $other->localizedName() }}</a></li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div class="mt-3 flex flex-wrap gap-2">
                     <x-ui.badge :color="$halal->color()">{{ $halal->label() }}</x-ui.badge>

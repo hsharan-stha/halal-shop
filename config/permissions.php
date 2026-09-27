@@ -32,6 +32,7 @@ return [
         'tax' => ['tax.view', 'tax.manage'],
         'analytics' => ['analytics.view', 'reports.export'],
         'settings' => ['settings.view', 'settings.update'],
+        'shops' => ['shops.view', 'shops.manage'],
         'staff' => ['staff.view', 'staff.manage', 'roles.manage'],
         'audit' => ['audit_logs.view'],
         'system' => ['system.health'],
@@ -40,35 +41,17 @@ return [
     'roles' => [
         'super_admin' => ['*'],
 
-        'admin' => [
-            'dashboard.*', 'products.*', 'categories.*', 'brands.*', 'halal_certificates.*',
-            'inventory.*', 'suppliers.*', 'purchase_orders.*', 'orders.*', 'customers.*',
-            'coupons.*', 'reviews.*', 'support.*', 'content.*', 'shipping.*', 'tax.*',
-            'analytics.view', 'reports.export', 'settings.view', 'settings.update',
-            'staff.view', 'audit_logs.view', 'system.health',
-        ],
-
-        'order_manager' => [
-            'dashboard.view', 'orders.*', 'customers.view', 'products.view', 'inventory.view',
-            'shipping.view', 'support.view', 'reports.export',
-        ],
-
-        'product_manager' => [
-            'dashboard.view', 'products.*', 'categories.*', 'brands.*', 'halal_certificates.view',
-            'halal_certificates.manage', 'inventory.view', 'suppliers.view', 'reviews.*', 'tax.view',
-        ],
-
-        'inventory_manager' => [
-            'dashboard.view', 'products.view', 'inventory.*', 'suppliers.*', 'purchase_orders.*',
-            'halal_certificates.view', 'reports.export',
-        ],
-
-        'content_manager' => [
-            'dashboard.view', 'content.*', 'products.view', 'categories.view', 'brands.view',
-        ],
-
-        'support_agent' => [
-            'dashboard.view', 'support.*', 'orders.view', 'customers.view', 'products.view',
+        /*
+         * A halal shop runs its own catalogue, stock and purchasing. Orders are
+         * read-only: the super admin confirms payment, shipment and cancellation.
+         */
+        'halal_shop' => [
+            'dashboard.view', 'products.view', 'products.create', 'products.update', 'products.delete',
+            'categories.view', 'categories.manage', 'brands.view', 'brands.manage',
+            'halal_certificates.view', 'halal_certificates.manage',
+            'inventory.view', 'inventory.adjust', 'inventory.receive',
+            'suppliers.view', 'suppliers.manage', 'purchase_orders.view', 'purchase_orders.manage',
+            'orders.view',
         ],
 
         'customer' => [],

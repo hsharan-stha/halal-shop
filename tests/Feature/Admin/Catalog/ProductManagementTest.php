@@ -9,6 +9,7 @@ use App\Enums\RoleSlug;
 use App\Models\Category;
 use App\Models\HalalCertification;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\TaxClass;
 use App\Models\User;
 use Database\Seeders\TaxSeeder;
@@ -23,12 +24,15 @@ class ProductManagementTest extends TestCase
 
     private User $manager;
 
+    private Shop $shop;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed(TaxSeeder::class);
-        $this->manager = $this->staff(RoleSlug::ProductManager);
+        $this->shop = Shop::factory()->create();
+        $this->manager = $this->staff(RoleSlug::SuperAdmin);
     }
 
     /**
@@ -38,6 +42,7 @@ class ProductManagementTest extends TestCase
     {
         return array_replace_recursive([
             'name' => 'Halal Chicken Thigh',
+            'shop_id' => $this->shop->id,
             'japanese_name' => 'ハラール鶏もも肉',
             'sku' => 'chk-thigh-1',
             'category_id' => Category::factory()->create()->id,
@@ -179,7 +184,7 @@ class ProductManagementTest extends TestCase
     {
         $product = Product::factory()->create();
 
-        $this->actingAs($this->staff(RoleSlug::SupportAgent))
+        $this->actingAs($this->customer())
             ->post(route('admin.products.bulk'), ['action' => 'delete', 'ids' => [$product->id]])
             ->assertForbidden();
 
@@ -224,14 +229,12 @@ class ProductManagementTest extends TestCase
         $this->actingAs($this->manager)->get(route('admin.products.edit', $product))->assertOk()->assertSee(__('admin.variants.title'));
     }
 
-    public function test_product_viewers_cannot_edit(): void
+    public function test_a_customer_cannot_edit_products(): void
     {
         $product = Product::factory()->create();
-        $viewer = $this->staff(RoleSlug::SupportAgent);
 
-        $this->actingAs($viewer)->get(route('admin.products.index'))->assertOk();
-        $this->actingAs($viewer)->get(route('admin.products.edit', $product))->assertForbidden();
-        $this->actingAs($viewer)->delete(route('admin.products.destroy', $product))->assertForbidden();
         $this->actingAs($this->customer())->get(route('admin.products.index'))->assertForbidden();
+        $this->actingAs($this->customer())->get(route('admin.products.edit', $product))->assertForbidden();
+        $this->actingAs($this->customer())->delete(route('admin.products.destroy', $product))->assertForbidden();
     }
 }

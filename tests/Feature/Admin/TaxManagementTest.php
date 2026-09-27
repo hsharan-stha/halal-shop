@@ -22,7 +22,7 @@ class TaxManagementTest extends TestCase
 
     public function test_tax_screen_shows_the_current_rates(): void
     {
-        $this->actingAs($this->staff(RoleSlug::Admin))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->get(route('admin.tax.index'))
             ->assertOk()
             ->assertSee(__('admin.tax.title'))
@@ -31,27 +31,24 @@ class TaxManagementTest extends TestCase
             ->assertSee('8%');
     }
 
-    public function test_viewers_can_open_the_list_but_cannot_change_a_rate(): void
+    public function test_a_halal_shop_cannot_view_or_change_tax_rates(): void
     {
         $reduced = TaxClass::query()->where('code', 'reduced')->firstOrFail();
+        $shopUser = $this->staff(RoleSlug::HalalShop);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($shopUser)
             ->get(route('admin.tax.index'))
-            ->assertOk();
-
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
-            ->put(route('admin.tax.update', $reduced), $this->payload($reduced, '9'))
             ->assertForbidden();
 
-        $this->actingAs($this->staff(RoleSlug::InventoryManager))
-            ->get(route('admin.tax.index'))
+        $this->actingAs($shopUser)
+            ->put(route('admin.tax.update', $reduced), $this->payload($reduced, '9'))
             ->assertForbidden();
     }
 
     public function test_a_new_rate_must_not_overlap_and_then_applies_on_its_start_date(): void
     {
         $reduced = TaxClass::query()->where('code', 'reduced')->firstOrFail();
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($admin)
             ->put(route('admin.tax.update', $reduced), $this->payload($reduced, '10', '2030-01-01'))
@@ -70,7 +67,7 @@ class TaxManagementTest extends TestCase
     public function test_the_default_class_and_a_class_used_by_products_cannot_be_deleted(): void
     {
         $reduced = TaxClass::query()->where('code', 'reduced')->firstOrFail();
-        $admin = $this->staff(RoleSlug::Admin);
+        $admin = $this->staff(RoleSlug::SuperAdmin);
 
         $this->actingAs($admin)
             ->delete(route('admin.tax.destroy', $reduced))

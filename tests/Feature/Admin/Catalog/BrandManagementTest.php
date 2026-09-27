@@ -19,7 +19,7 @@ class BrandManagementTest extends TestCase
     {
         Storage::fake(config('shop.media_disk'));
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.brands.store'), [
                 'name' => 'Sakura Demo Foods',
                 'country_of_origin' => 'jp',
@@ -36,7 +36,7 @@ class BrandManagementTest extends TestCase
 
     public function test_logo_must_be_an_image(): void
     {
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.brands.store'), [
                 'name' => 'Bad Logo',
                 'logo' => UploadedFile::fake()->create('logo.php', 10, 'application/x-php'),
@@ -46,7 +46,7 @@ class BrandManagementTest extends TestCase
 
     public function test_javascript_urls_are_rejected(): void
     {
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->post(route('admin.brands.store'), ['name' => 'Sneaky', 'website_url' => 'javascript:alert(1)'])
             ->assertSessionHasErrors('website_url');
     }
@@ -57,7 +57,7 @@ class BrandManagementTest extends TestCase
         $brand = Brand::factory()->create();
         Product::factory()->create(['brand_id' => $brand->id]);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))
             ->delete(route('admin.brands.destroy', $brand))
             ->assertSessionHas('error');
 
@@ -68,7 +68,7 @@ class BrandManagementTest extends TestCase
     {
         $brand = Brand::factory()->create();
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))->delete(route('admin.brands.destroy', $brand))->assertRedirect();
+        $this->actingAs($this->staff(RoleSlug::SuperAdmin))->delete(route('admin.brands.destroy', $brand))->assertRedirect();
 
         $this->assertSoftDeleted($brand);
     }

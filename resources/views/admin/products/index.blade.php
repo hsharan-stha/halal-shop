@@ -77,7 +77,7 @@
                                 @include('admin.products._thumb')
                                 <div class="min-w-0">
                                     <p class="font-medium">{{ $product->localizedName() }}</p>
-                                    <p class="text-xs text-ink-muted"><span class="font-mono">{{ $product->sku }}</span> · {{ $product->category?->localizedName() }}@if ($product->brand) · {{ $product->brand->localizedName() }}@endif</p>
+                                    <p class="text-xs text-ink-muted"><span class="font-mono">{{ $product->sku }}</span>@if ($product->shop) · {{ $product->shop->name }}@endif · {{ $product->category?->localizedName() }}@if ($product->brand) · {{ $product->brand->localizedName() }}@endif</p>
                                 </div>
                             </div>
                         </td>
@@ -97,7 +97,7 @@
                             @include('admin.products._thumb')
                             <div class="min-w-0 flex-1 space-y-1.5">
                                 <p class="font-medium leading-snug">{{ $product->localizedName() }}</p>
-                                <p class="text-xs text-ink-muted"><span class="font-mono">{{ $product->sku }}</span> · @include('admin.products._price')</p>
+                                <p class="text-xs text-ink-muted"><span class="font-mono">{{ $product->sku }}</span>@if ($product->shop) · {{ $product->shop->name }}@endif · @include('admin.products._price')</p>
                                 <div class="flex flex-wrap gap-1">
                                     <x-ui.badge :color="$product->trashed() ? 'danger' : $product->status->color()">{{ $product->trashed() ? __('admin.products.trashed') : $product->status->label() }}</x-ui.badge>
                                     <x-admin.halal-status :product="$product" />

@@ -8,13 +8,12 @@ return [
     ],
     'role_slug' => [
         'super_admin' => 'Super admin',
-        'admin' => 'Admin',
-        'order_manager' => 'Order manager',
-        'product_manager' => 'Product manager',
-        'inventory_manager' => 'Inventory manager',
-        'content_manager' => 'Content manager',
-        'support_agent' => 'Support agent',
+        'halal_shop' => 'Halal shop',
         'customer' => 'Customer',
+    ],
+    'delivery_destination' => [
+        'customer' => 'Customer address',
+        'shop' => 'Another halal shop',
     ],
     'product_status' => [
         'draft' => 'Draft',

@@ -41,7 +41,7 @@
                                 <span class="grid size-9 place-items-center rounded-lg bg-surface-muted text-ink-muted"><x-icon :name="$category->icon ?: 'squares'" class="size-5" /></span>
                             @endif
                             <div class="min-w-0">
-                                <p class="font-medium">{{ $category->localizedName() }}</p>
+                                <p class="flex flex-wrap items-center gap-2 font-medium">{{ $category->localizedName() }} <x-admin.owner-badge :row="$category" /></p>
                                 @if ($search !== '' && $category->parent)
                                     <p class="text-xs text-ink-muted">{{ $category->parent->localizedName() }}</p>
                                 @endif
@@ -58,7 +58,7 @@
                 @foreach ($rows as ['category' => $category, 'depth' => $depth])
                     <div class="flex items-start justify-between gap-3 p-4" style="padding-inline-start: {{ 1 + $depth * 1 }}rem">
                         <div class="min-w-0">
-                            <p class="font-medium">@if ($depth > 0)<span class="text-ink-muted" aria-hidden="true">└ </span>@endif{{ $category->localizedName() }}</p>
+                            <p class="flex flex-wrap items-center gap-2 font-medium">@if ($depth > 0)<span class="text-ink-muted" aria-hidden="true">└ </span>@endif{{ $category->localizedName() }} <x-admin.owner-badge :row="$category" /></p>
                             <p class="text-xs text-ink-muted">{{ trans_choice('admin.categories.product_count', $category->products_count, ['count' => $category->products_count]) }} · {{ $category->is_active ? __('admin.active') : __('admin.inactive') }}</p>
                         </div>
                         @include('admin.categories._actions')

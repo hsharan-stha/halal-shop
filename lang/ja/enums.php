@@ -8,13 +8,12 @@ return [
     ],
     'role_slug' => [
         'super_admin' => 'スーパー管理者',
-        'admin' => '管理者',
-        'order_manager' => '注文担当',
-        'product_manager' => '商品担当',
-        'inventory_manager' => '在庫担当',
-        'content_manager' => 'コンテンツ担当',
-        'support_agent' => 'サポート担当',
+        'halal_shop' => 'ハラール店',
         'customer' => '顧客',
+    ],
+    'delivery_destination' => [
+        'customer' => 'お客様の住所',
+        'shop' => '別のハラール店',
     ],
     'product_status' => [
         'draft' => '下書き',

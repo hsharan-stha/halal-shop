@@ -138,13 +138,12 @@ class CheckoutTest extends TestCase
         $this->assertSame(1990, $order->total);
     }
 
-    public function test_order_manager_confirms_payment_and_shipment_while_other_roles_cannot(): void
+    public function test_super_admin_confirms_payment_and_shipment_and_a_customer_cannot(): void
     {
         $order = $this->placedOrder('Admin Visible Lamb');
-        $manager = $this->staff(RoleSlug::OrderManager);
-        $support = $this->staff(RoleSlug::SupportAgent);
+        $manager = $this->staff(RoleSlug::SuperAdmin);
 
-        $this->actingAs($this->staff(RoleSlug::ProductManager))
+        $this->actingAs($this->customer())
             ->get(route('admin.orders.index'))
             ->assertForbidden();
 
@@ -157,14 +156,6 @@ class CheckoutTest extends TestCase
             ->get(route('admin.orders.show', $order))
             ->assertOk()
             ->assertSee('Admin Visible Lamb');
-
-        $this->actingAs($support)
-            ->get(route('admin.orders.show', $order))
-            ->assertOk();
-
-        $this->actingAs($support)
-            ->post(route('admin.orders.pay', $order))
-            ->assertForbidden();
 
         $order->load('customer');
 

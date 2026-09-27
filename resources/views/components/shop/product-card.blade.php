@@ -10,6 +10,9 @@
             @endif
         </div>
         <div class="flex flex-1 flex-col gap-1 p-3">
+            @if ($product->shop)
+                <p class="truncate text-xs text-primary">{{ $product->shop->name }}</p>
+            @endif
             @if ($product->brand)
                 <p class="truncate text-xs text-ink-muted">{{ $product->brand->localizedName() }}</p>
             @endif
