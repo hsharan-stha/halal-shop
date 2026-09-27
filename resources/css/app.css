@@ -1,0 +1,218 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../../app/**/*.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Brand values are injected at runtime from admin settings as --brand-* custom
+ * properties (see layouts). Everything else derives from them, so no brand
+ * colour is hardcoded in templates.
+ */
+:root {
+    --brand-primary: #0f7a4f;
+    --brand-secondary: #14532d;
+    --brand-accent: #d97706;
+    --brand-background: #f7f7f5;
+    --brand-font: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo';
+
+    --surface: #ffffff;
+    --surface-muted: #f3f4f2;
+    --ink: #1c1f1d;
+    --ink-muted: #5c635f;
+    --line: #e4e6e3;
+    --success: #15803d;
+    --warning: #b45309;
+    --danger: #b91c1c;
+    --info: #1d4ed8;
+}
+
+.dark {
+    --brand-background: #0f1311;
+    --surface: #171c19;
+    --surface-muted: #1f2622;
+    --ink: #eef1ef;
+    --ink-muted: #a3aca7;
+    --line: #2c3530;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #93c5fd;
+}
+
+@theme inline {
+    --font-sans: var(--brand-font), ui-sans-serif, system-ui, sans-serif;
+
+    --color-primary: var(--brand-primary);
+    --color-primary-hover: color-mix(in oklab, var(--brand-primary) 85%, black);
+    --color-primary-soft: color-mix(in oklab, var(--brand-primary) 12%, var(--surface));
+    --color-secondary: var(--brand-secondary);
+    --color-accent: var(--brand-accent);
+    --color-accent-soft: color-mix(in oklab, var(--brand-accent) 14%, var(--surface));
+    --color-page: var(--brand-background);
+
+    --color-surface: var(--surface);
+    --color-surface-muted: var(--surface-muted);
+    --color-ink: var(--ink);
+    --color-ink-muted: var(--ink-muted);
+    --color-line: var(--line);
+
+    --color-success: var(--success);
+    --color-success-soft: color-mix(in oklab, var(--success) 14%, var(--surface));
+    --color-warning: var(--warning);
+    --color-warning-soft: color-mix(in oklab, var(--warning) 14%, var(--surface));
+    --color-danger: var(--danger);
+    --color-danger-soft: color-mix(in oklab, var(--danger) 12%, var(--surface));
+    --color-info: var(--info);
+    --color-info-soft: color-mix(in oklab, var(--info) 12%, var(--surface));
+    --color-on-primary: #ffffff;
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-page text-ink font-sans antialiased;
+        overflow-x: hidden;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-primary;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition select-none disabled:cursor-not-allowed disabled:opacity-50;
+    }
+    .btn-primary {
+        @apply bg-primary text-on-primary hover:bg-primary-hover;
+    }
+    .btn-secondary {
+        @apply border border-line bg-surface text-ink hover:bg-surface-muted;
+    }
+    .btn-accent {
+        @apply bg-accent text-on-primary hover:opacity-90;
+    }
+    .btn-danger {
+        @apply bg-danger text-white hover:opacity-90;
+    }
+    .btn-ghost {
+        @apply text-ink-muted hover:bg-surface-muted hover:text-ink;
+    }
+    .btn-sm {
+        @apply min-h-9 rounded-lg px-3 py-1.5 text-xs;
+    }
+    .btn-icon {
+        @apply min-h-11 min-w-11 p-2;
+    }
+
+    .form-label {
+        @apply mb-1.5 block text-sm font-medium text-ink;
+    }
+    .form-control {
+        @apply block min-h-11 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-ink-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/25 focus:outline-none sm:text-sm;
+    }
+    .form-control[aria-invalid='true'] {
+        @apply border-danger focus:ring-danger/25;
+    }
+    .form-hint {
+        @apply mt-1 text-xs text-ink-muted;
+    }
+    .form-error {
+        @apply mt-1 text-xs font-medium text-danger;
+    }
+    .form-check {
+        @apply size-5 rounded border-line text-primary accent-primary focus:ring-primary;
+    }
+
+    .card {
+        @apply rounded-2xl border border-line bg-surface;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap;
+    }
+    .badge-neutral {
+        @apply bg-surface-muted text-ink-muted;
+    }
+    .badge-primary {
+        @apply bg-primary-soft text-primary;
+    }
+    .badge-success {
+        @apply bg-success-soft text-success;
+    }
+    .badge-warning {
+        @apply bg-warning-soft text-warning;
+    }
+    .badge-danger {
+        @apply bg-danger-soft text-danger;
+    }
+    .badge-info {
+        @apply bg-info-soft text-info;
+    }
+    .badge-accent {
+        @apply bg-accent-soft text-accent;
+    }
+
+    .data-table {
+        @apply w-full text-left text-sm;
+    }
+    .data-table th {
+        @apply border-b border-line px-4 py-3 text-xs font-semibold tracking-wide text-ink-muted uppercase;
+    }
+    .data-table td {
+        @apply border-b border-line px-4 py-3 align-middle;
+    }
+    .data-table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .prose-content {
+        @apply max-w-none text-ink;
+    }
+    .prose-content h2 {
+        @apply mt-8 mb-3 text-xl font-bold;
+    }
+    .prose-content h3 {
+        @apply mt-6 mb-2 text-lg font-semibold;
+    }
+    .prose-content p {
+        @apply mb-4 leading-7;
+    }
+    .prose-content ul {
+        @apply mb-4 list-disc pl-6;
+    }
+    .prose-content ol {
+        @apply mb-4 list-decimal pl-6;
+    }
+    .prose-content a {
+        @apply text-primary underline;
+    }
+    .prose-content table {
+        @apply mb-4 w-full text-sm;
+    }
+    .prose-content th,
+    .prose-content td {
+        @apply border border-line px-3 py-2 text-left align-top;
+    }
+
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}
